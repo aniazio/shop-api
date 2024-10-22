@@ -2,9 +2,7 @@ package com.griddynamics.shopapi.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.util.HashSet;
 import java.util.Objects;
-import java.util.Set;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -27,17 +25,6 @@ public class Session {
 
   @Column(nullable = false)
   private LocalDateTime expirationTime;
-
-  @OneToOne(fetch = FetchType.LAZY)
-  private UserDetails userDetails;
-
-  @OneToMany(mappedBy = "session")
-  @ToString.Exclude
-  private Set<Cart> carts = new HashSet<>();
-
-  public void addCart(Cart cart) {
-    carts.add(cart);
-  }
 
   @Override
   public boolean equals(Object o) {

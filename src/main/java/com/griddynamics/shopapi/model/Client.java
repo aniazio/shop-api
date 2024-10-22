@@ -2,7 +2,9 @@ package com.griddynamics.shopapi.model;
 
 import com.griddynamics.shopapi.security.Encoder;
 import jakarta.persistence.*;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -13,10 +15,10 @@ import lombok.ToString;
 @Setter
 @NoArgsConstructor
 @ToString
-public class UserDetails {
+public class Client {
   @Id
-  @SequenceGenerator(name = "seqUser", sequenceName = "USERS_SEQ", allocationSize = 1)
-  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "seqUser")
+  @SequenceGenerator(name = "seqClient", sequenceName = "CLIENTS_SEQ", allocationSize = 1)
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "seqClient")
   private Long id;
 
   @Column(nullable = false)
@@ -25,12 +27,23 @@ public class UserDetails {
   @Column(nullable = false)
   private String password;
 
-  @OneToOne(mappedBy = "userDetails")
+  @OneToOne(fetch = FetchType.LAZY)
   @ToString.Exclude
   private Session session;
 
+  @OneToMany(mappedBy = "client", fetch = FetchType.LAZY)
+  private Set<OrderDetails> orders = new HashSet<>();
+
   public void setPassword(String password) {
     this.password = Encoder.encode(password);
+  }
+
+  public void addOrder(OrderDetails order) {
+    orders.add(order);
+  }
+
+  public void removeOrder(OrderDetails order) {
+    orders.remove(order);
   }
 
   @Override
@@ -38,7 +51,7 @@ public class UserDetails {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    UserDetails that = (UserDetails) o;
+    Client that = (Client) o;
 
     return Objects.equals(email, that.email);
   }

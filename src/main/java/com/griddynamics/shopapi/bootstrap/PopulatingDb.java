@@ -9,23 +9,20 @@ import org.springframework.stereotype.Component;
 @Component
 public class PopulatingDb implements CommandLineRunner {
 
-  private final CartRepository cartRepository;
   private final OrderRepository orderRepository;
   private final ProductRepository productRepository;
   private final SessionRepository sessionRepository;
-  private final UserRepository userRepository;
+  private final ClientRepository clientRepository;
 
   public PopulatingDb(
-      CartRepository cartRepository,
       OrderRepository orderRepository,
       ProductRepository productRepository,
       SessionRepository sessionRepository,
-      UserRepository userRepository) {
-    this.cartRepository = cartRepository;
+      ClientRepository clientRepository) {
     this.orderRepository = orderRepository;
     this.productRepository = productRepository;
     this.sessionRepository = sessionRepository;
-    this.userRepository = userRepository;
+    this.clientRepository = clientRepository;
   }
 
   @Override
@@ -49,39 +46,32 @@ public class PopulatingDb implements CommandLineRunner {
     Product savedProduct2 = productRepository.save(product2);
     Product savedProduct3 = productRepository.save(product3);
 
-    UserDetails user1 = new UserDetails();
-    user1.setEmail("user1@gmail.com");
-    user1.setPassword("strong-password");
+    Client client1 = new Client();
+    client1.setEmail("user1@gmail.com");
+    client1.setPassword("strong-password");
 
-    UserDetails user2 = new UserDetails();
-    user2.setEmail("user2@onet.pl");
-    user2.setPassword("12345");
-
-    userRepository.save(user1);
-    userRepository.save(user2);
+    Client client2 = new Client();
+    client2.setEmail("user2@onet.pl");
+    client2.setPassword("12345");
 
     Session session1 = new Session();
-    session1.setUserDetails(user1);
     session1.setSessionId("sadlasjdkla");
     session1.setExpirationTime(LocalDateTime.of(2024, 12, 12, 0, 0));
+    client1.setSession(session1);
 
-    Cart cart = new Cart();
+    sessionRepository.save(session1);
+    clientRepository.save(client1);
+    clientRepository.save(client2);
+
+    OrderDetails cart = new OrderDetails();
     cart.setTotal(0);
     cart.setCreatedAt(LocalDateTime.now());
     cart.addProduct(savedProduct2, 2);
     cart.addProduct(savedProduct1, 6);
+    cart.setStatus(OrderStatus.CART);
 
-    session1.addCart(cart);
-    cart.setSession(session1);
+    cart.setClient(client1);
 
-    sessionRepository.save(session1);
-    cartRepository.save(cart);
-
-    OrderDetails order = new OrderDetails();
-    order.setCart(cart);
-    order.setStatus(OrderStatus.ORDERED);
-    order.setCreatedAt(LocalDateTime.now());
-
-    orderRepository.save(order);
+    orderRepository.save(cart);
   }
 }

@@ -12,7 +12,7 @@ import lombok.ToString;
 @Setter
 @NoArgsConstructor
 @ToString
-public class CartItem {
+public class OrderItem {
 
   @EmbeddedId
   @AttributeOverrides({
@@ -21,11 +21,15 @@ public class CartItem {
   })
   private CartItemPrimaryKey id = new CartItemPrimaryKey();
 
+  @Column(nullable = false)
   private int quantity;
+
+  @Column(nullable = false)
+  private double price;
 
   @ManyToOne(optional = false)
   @ToString.Exclude
-  private Cart cart;
+  private OrderDetails order;
 
   public int getOrdinal() {
     return id.getOrdinal();
@@ -48,9 +52,9 @@ public class CartItem {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    CartItem cartItem = (CartItem) o;
+    OrderItem orderItem = (OrderItem) o;
 
-    return Objects.equals(id, cartItem.id);
+    return Objects.equals(id, orderItem.id);
   }
 
   @Override
