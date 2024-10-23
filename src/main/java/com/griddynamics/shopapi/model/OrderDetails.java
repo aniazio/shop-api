@@ -2,10 +2,7 @@ package com.griddynamics.shopapi.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -38,7 +35,7 @@ public class OrderDetails {
   private Client client;
 
   @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
-  private Set<OrderItem> items = new HashSet<>();
+  private List<OrderItem> items = new LinkedList<>();
 
   public void addProduct(Product product, int quantity) {
     OrderItem item = new OrderItem();
@@ -66,7 +63,7 @@ public class OrderDetails {
 
   public void clearOrder() {
     total = 0;
-    items = new HashSet<>();
+    items = new LinkedList<>();
   }
 
   public void setClient(Client client) {
