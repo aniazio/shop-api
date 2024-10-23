@@ -38,14 +38,21 @@ public class OrderDetails {
   private List<OrderItem> items = new LinkedList<>();
 
   public void addProduct(Product product, int quantity) {
-    OrderItem item = new OrderItem();
-    item.setOrder(this);
-    item.setProduct(product);
-    item.setQuantity(quantity);
-    item.setOrdinal(items.size());
-    item.setPrice(product.getPrice());
+    Optional<OrderItem> alreadyIn =
+        items.stream().filter(item -> item.getProductId() == product.getId()).findAny();
+    if (alreadyIn.isPresent()) {
+      OrderItem item = alreadyIn.get();
+      item.setQuantity(item.getQuantity() + quantity);
+    } else {
+      OrderItem item = new OrderItem();
+      item.setOrder(this);
+      item.setProduct(product);
+      item.setQuantity(quantity);
+      item.setOrdinal(items.size());
+      item.setPrice(product.getPrice());
 
-    items.add(item);
+      items.add(item);
+    }
 
     total += quantity * product.getPrice();
   }
