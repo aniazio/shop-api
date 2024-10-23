@@ -1,5 +1,6 @@
 package com.griddynamics.shopapi.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.griddynamics.shopapi.model.Client;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,7 +14,7 @@ import lombok.ToString;
 public class ClientDto {
   private Long id;
   private String email;
-  private String passwordNotEncoded;
+  @JsonIgnore private String passwordNotEncoded;
 
   public ClientDto(Client client) {
     id = client.getId();
