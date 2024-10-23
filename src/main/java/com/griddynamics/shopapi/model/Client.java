@@ -27,9 +27,6 @@ public class Client {
   @Column(nullable = false)
   private String password;
 
-  @OneToOne(fetch = FetchType.LAZY)
-  @ToString.Exclude
-  private Session session;
 
   @OneToMany(mappedBy = "client", fetch = FetchType.LAZY)
   private Set<OrderDetails> orders = new HashSet<>();

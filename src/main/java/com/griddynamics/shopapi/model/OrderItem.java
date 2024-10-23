@@ -19,7 +19,7 @@ public class OrderItem {
     @AttributeOverride(name = "productId", column = @Column(name = "product_id")),
     @AttributeOverride(name = "ordinal", column = @Column(name = "ordinal"))
   })
-  private CartItemPrimaryKey id = new CartItemPrimaryKey();
+  private OrderItemPrimaryKey id = new OrderItemPrimaryKey();
 
   @Column(nullable = false)
   private int quantity;

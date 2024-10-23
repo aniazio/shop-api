@@ -11,17 +11,14 @@ public class PopulatingDb implements CommandLineRunner {
 
   private final OrderRepository orderRepository;
   private final ProductRepository productRepository;
-  private final SessionRepository sessionRepository;
   private final ClientRepository clientRepository;
 
   public PopulatingDb(
       OrderRepository orderRepository,
       ProductRepository productRepository,
-      SessionRepository sessionRepository,
       ClientRepository clientRepository) {
     this.orderRepository = orderRepository;
     this.productRepository = productRepository;
-    this.sessionRepository = sessionRepository;
     this.clientRepository = clientRepository;
   }
 
@@ -54,12 +51,7 @@ public class PopulatingDb implements CommandLineRunner {
     client2.setEmail("user2@onet.pl");
     client2.setPassword("12345");
 
-    Session session1 = new Session();
-    session1.setSessionId("sadlasjdkla");
-    session1.setExpirationTime(LocalDateTime.of(2024, 12, 12, 0, 0));
-    client1.setSession(session1);
 
-    sessionRepository.save(session1);
     clientRepository.save(client1);
     clientRepository.save(client2);
 

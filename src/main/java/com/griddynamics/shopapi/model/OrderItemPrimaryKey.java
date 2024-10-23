@@ -9,7 +9,7 @@ import lombok.*;
 @NoArgsConstructor
 @ToString
 @EqualsAndHashCode
-public class CartItemPrimaryKey {
+public class OrderItemPrimaryKey {
 
   private Long productId;
   private int ordinal;
