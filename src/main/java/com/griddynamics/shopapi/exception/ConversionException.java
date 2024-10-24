@@ -1,12 +1,12 @@
-package com.griddynamics.shopapi.exceptions;
+package com.griddynamics.shopapi.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ResponseStatus(HttpStatus.BAD_REQUEST)
-public class ProductNotAvailableException extends RuntimeException {
+public class ConversionException extends RuntimeException {
 
-  public ProductNotAvailableException(String message) {
+  public ConversionException(String message) {
     super(message);
   }
 }

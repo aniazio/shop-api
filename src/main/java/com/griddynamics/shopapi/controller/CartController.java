@@ -3,7 +3,8 @@ package com.griddynamics.shopapi.controller;
 import com.griddynamics.shopapi.dto.CartDto;
 import com.griddynamics.shopapi.dto.OrderDto;
 import com.griddynamics.shopapi.dto.OrderItemDto;
-import com.griddynamics.shopapi.exceptions.ForbiddenResourcesException;
+import com.griddynamics.shopapi.dto.SessionInfo;
+import com.griddynamics.shopapi.exception.ForbiddenResourcesException;
 import com.griddynamics.shopapi.service.CartService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.web.bind.annotation.*;
@@ -19,43 +20,53 @@ public class CartController {
 
   @GetMapping("")
   public CartDto getCart(HttpSession session) {
-    long userId = getAttributeSafely("userId", session);
-    return cartService.getCartFor(userId);
+    SessionInfo sessionInfo = getSessionInfo(session);
+    return cartService.getCartFor(sessionInfo);
   }
 
   @DeleteMapping("{productId}")
   public void deleteItemFromCart(@PathVariable long productId, HttpSession session) {
-    long cartId = getAttributeSafely("cartId", session);
-    CartDto updatedCart = cartService.deleteItemFromCart(cartId, productId);
+    SessionInfo sessionInfo = getSessionInfo(session);
+    cartService.deleteItemFromCart(productId, sessionInfo);
+  }
+
+  @PostMapping("/add-item")
+  public void addItemToCart(@RequestBody OrderItemDto orderItemDto, HttpSession session) {
+    SessionInfo sessionInfo = getSessionInfo(session);
+    cartService.updateItemAmount(orderItemDto, sessionInfo);
   }
 
   @PatchMapping("/update-item")
   public void updateItemAmount(@RequestBody OrderItemDto orderItemDto, HttpSession session) {
-    long cartId = getAttributeSafely("cartId", session);
-    CartDto updatedCart = cartService.updateItemAmount(orderItemDto, cartId);
+    SessionInfo sessionInfo = getSessionInfo(session);
+    cartService.updateItemAmount(orderItemDto, sessionInfo);
   }
 
   @PutMapping("/checkout")
   public OrderDto checkout(HttpSession session) {
-    long cartId = getAttributeSafely("cartId", session);
-    long userId = getAttributeSafely("userId", session);
-    OrderDto order = cartService.checkout(cartId);
-    session.setAttribute("cartId", cartService.getIdOfNewCartFor(userId));
+    SessionInfo sessionInfo = getSessionInfo(session);
+    OrderDto order = cartService.checkout(sessionInfo);
+    session.setAttribute("cartId", cartService.getIdOfNewCart(sessionInfo));
     return order;
   }
 
   @DeleteMapping("")
   public void clearCart(HttpSession session) {
-    long cartId = getAttributeSafely("cartId", session);
-    cartService.clearCart(cartId);
+    SessionInfo sessionInfo = getSessionInfo(session);
+    cartService.clearCart(sessionInfo);
   }
 
-  private long getAttributeSafely(String attribute, HttpSession session) {
-    Object sessionAttribute = session.getAttribute(attribute);
-    if (sessionAttribute == null) {
+  private SessionInfo getSessionInfo(HttpSession session) {
+    Object sessionUserId = session.getAttribute("userId");
+    if (sessionUserId == null) {
       throw new ForbiddenResourcesException(
-          attribute + " not found in session for the method, which it requires.");
+          "userId not found in session for the method, which it requires.");
     }
-    return (long) sessionAttribute;
+    Object sessionCartId = session.getAttribute("cartId");
+    if (sessionCartId == null) {
+      throw new ForbiddenResourcesException(
+          "cartId not found in session for the method, which it requires.");
+    }
+    return new SessionInfo((long) sessionUserId, (long) sessionCartId);
   }
 }

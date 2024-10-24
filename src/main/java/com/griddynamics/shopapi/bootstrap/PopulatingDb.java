@@ -45,12 +45,11 @@ public class PopulatingDb implements CommandLineRunner {
 
     Client client1 = new Client();
     client1.setEmail("user1@gmail.com");
-    client1.setPassword("strong-password");
+    client1.encodeAndSetPassword("strong-password");
 
     Client client2 = new Client();
     client2.setEmail("user2@onet.pl");
-    client2.setPassword("12345");
-
+    client2.encodeAndSetPassword("12345");
 
     clientRepository.save(client1);
     clientRepository.save(client2);

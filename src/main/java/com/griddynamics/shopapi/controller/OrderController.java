@@ -2,7 +2,7 @@ package com.griddynamics.shopapi.controller;
 
 import com.griddynamics.shopapi.dto.OrderDto;
 import com.griddynamics.shopapi.dto.OrderListDto;
-import com.griddynamics.shopapi.exceptions.ForbiddenResourcesException;
+import com.griddynamics.shopapi.exception.ForbiddenResourcesException;
 import com.griddynamics.shopapi.service.OrderService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.web.bind.annotation.*;

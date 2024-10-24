@@ -1,6 +1,6 @@
 package com.griddynamics.shopapi.dto;
 
-import com.griddynamics.shopapi.exceptions.ConversionException;
+import com.griddynamics.shopapi.exception.ConversionException;
 import com.griddynamics.shopapi.model.OrderDetails;
 import com.griddynamics.shopapi.model.OrderStatus;
 import java.util.ArrayList;
