@@ -17,7 +17,7 @@ public class OrderItem {
   @EmbeddedId
   @AttributeOverrides({
     @AttributeOverride(name = "productId", column = @Column(name = "product_id")),
-    @AttributeOverride(name = "ordinal", column = @Column(name = "ordinal"))
+    @AttributeOverride(name = "orderId", column = @Column(name = "order_id"))
   })
   private OrderItemPrimaryKey id = new OrderItemPrimaryKey();
 
@@ -27,20 +27,14 @@ public class OrderItem {
   @Column(nullable = false)
   private double price;
 
-  @ManyToOne(optional = false)
+  @MapsId("orderId")
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "order_id", referencedColumnName = "id")
   @ToString.Exclude
   private OrderDetails order;
 
-  public int getOrdinal() {
-    return id.getOrdinal();
-  }
-
   public long getProductId() {
     return id.getProductId();
-  }
-
-  public void setOrdinal(int ordinal) {
-    this.id.setOrdinal(ordinal);
   }
 
   public void setProduct(Product product) {
