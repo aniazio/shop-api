@@ -21,7 +21,7 @@ public class OrderDetails {
   private Long id;
 
   @Column(nullable = false)
-  private double total;
+  private double total = 0;
 
   @Column(nullable = false)
   @CreationTimestamp
@@ -57,9 +57,26 @@ public class OrderDetails {
     total += quantity * product.getPrice();
   }
 
-  public void removeProduct(Product product) {
+  public int updateAndGetDifferenceInProductAmount(long productId, int newAmount) {
     Optional<OrderItem> itemOp =
-        items.stream().filter(item -> item.getProductId() == product.getId()).findAny();
+        items.stream().filter(item -> item.getProductId() == productId).findAny();
+    if (itemOp.isEmpty()) {
+      return newAmount;
+    }
+    OrderItem item = itemOp.get();
+    int diff = newAmount - item.getQuantity();
+    total += diff * item.getPrice();
+    item.setQuantity(newAmount);
+    return diff;
+  }
+
+  public void removeProduct(Product product) {
+    removeProduct(product.getId());
+  }
+
+  public void removeProduct(long productId) {
+    Optional<OrderItem> itemOp =
+        items.stream().filter(item -> item.getProductId() == productId).findAny();
     if (itemOp.isEmpty()) {
       return;
     }

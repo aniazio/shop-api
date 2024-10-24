@@ -31,7 +31,7 @@ public class Client {
   @OneToMany(mappedBy = "client", fetch = FetchType.LAZY)
   private Set<OrderDetails> orders = new HashSet<>();
 
-  public void setPassword(String password) {
+  public void encodeAndSetPassword(String password) {
     this.password = Encoder.encode(password);
   }
 

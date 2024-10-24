@@ -3,17 +3,21 @@ package com.griddynamics.shopapi.service;
 import com.griddynamics.shopapi.dto.CartDto;
 import com.griddynamics.shopapi.dto.OrderDto;
 import com.griddynamics.shopapi.dto.OrderItemDto;
+import com.griddynamics.shopapi.dto.SessionInfo;
 
 public interface CartService {
-  CartDto getCartFor(long userId);
 
-  CartDto deleteItemFromCart(Long id, long productId);
+  CartDto getCartFor(SessionInfo sessionInfo);
 
-  CartDto updateItemAmount(OrderItemDto orderItemDto, Long id);
+  CartDto getCartFor(long clientId);
 
-  OrderDto checkout(Long id);
+  void deleteItemFromCart(long productId, SessionInfo sessionInfo);
 
-  void clearCart(Long id);
+  void updateItemAmount(OrderItemDto orderItemDto, SessionInfo sessionInfo);
 
-  long getIdOfNewCartFor(long userId);
+  OrderDto checkout(SessionInfo sessionInfo);
+
+  long getIdOfNewCart(SessionInfo sessionInfo);
+
+  void clearCart(SessionInfo sessionInfo);
 }

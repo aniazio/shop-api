@@ -9,4 +9,8 @@ public class Encoder {
   public static String encode(String str) {
     return encoder.encode(str);
   }
+
+  public static boolean matches(String str, String strEncoded) {
+    return encoder.matches(str, strEncoded);
+  }
 }

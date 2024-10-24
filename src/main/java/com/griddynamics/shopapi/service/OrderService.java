@@ -5,7 +5,7 @@ import com.griddynamics.shopapi.dto.OrderListDto;
 
 public interface OrderService {
 
-  OrderListDto getAllOrderFor(long userId);
+  OrderListDto getAllOrderFor(long clientId);
 
   OrderDto getOrderFor(long userId, long orderId);
 

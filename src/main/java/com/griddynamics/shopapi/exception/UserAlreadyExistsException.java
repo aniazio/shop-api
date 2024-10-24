@@ -1,4 +1,4 @@
-package com.griddynamics.shopapi.exceptions;
+package com.griddynamics.shopapi.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;

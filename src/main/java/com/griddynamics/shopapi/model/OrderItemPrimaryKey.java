@@ -12,5 +12,5 @@ import lombok.*;
 public class OrderItemPrimaryKey {
 
   private Long productId;
-  private int ordinal;
+  private Long orderId;
 }
