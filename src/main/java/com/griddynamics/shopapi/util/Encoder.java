@@ -1,4 +1,4 @@
-package com.griddynamics.shopapi.security;
+package com.griddynamics.shopapi.util;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;

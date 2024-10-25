@@ -2,8 +2,10 @@ package com.griddynamics.shopapi.dto;
 
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Getter;
 import lombok.ToString;
 
+@Getter
 @ToString
 public class OrderListDto {
 

@@ -20,7 +20,7 @@ public class ResetToken {
   private Client client;
 
   private String token = UUID.randomUUID().toString();
-  private LocalDateTime expiration_date = LocalDateTime.now().plusMinutes(30);
+  private LocalDateTime expiration_date = LocalDateTime.now().plusMinutes(1);
 
   public boolean isExpired() {
     return LocalDateTime.now().isAfter(expiration_date);

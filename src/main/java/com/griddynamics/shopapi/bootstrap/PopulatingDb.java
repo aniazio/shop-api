@@ -2,7 +2,6 @@ package com.griddynamics.shopapi.bootstrap;
 
 import com.griddynamics.shopapi.model.*;
 import com.griddynamics.shopapi.repository.*;
-import java.time.LocalDateTime;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
@@ -55,8 +54,6 @@ public class PopulatingDb implements CommandLineRunner {
     clientRepository.save(client2);
 
     OrderDetails cart = new OrderDetails();
-    cart.setTotal(0);
-    cart.setCreatedAt(LocalDateTime.now());
     cart.addProduct(savedProduct2, 2);
     cart.addProduct(savedProduct1, 6);
     cart.setStatus(OrderStatus.CART);

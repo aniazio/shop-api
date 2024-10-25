@@ -24,7 +24,7 @@ public class CartController {
     return cartService.getCartFor(sessionInfo);
   }
 
-  @DeleteMapping("{productId}")
+  @DeleteMapping("/{productId}")
   public void deleteItemFromCart(@PathVariable long productId, HttpSession session) {
     SessionInfo sessionInfo = getSessionInfo(session);
     cartService.deleteItemFromCart(productId, sessionInfo);
@@ -33,7 +33,7 @@ public class CartController {
   @PostMapping("/add-item")
   public void addItemToCart(@RequestBody OrderItemDto orderItemDto, HttpSession session) {
     SessionInfo sessionInfo = getSessionInfo(session);
-    cartService.updateItemAmount(orderItemDto, sessionInfo);
+    cartService.addItem(orderItemDto, sessionInfo);
   }
 
   @PatchMapping("/update-item")
@@ -57,7 +57,7 @@ public class CartController {
   }
 
   private SessionInfo getSessionInfo(HttpSession session) {
-    Object sessionUserId = session.getAttribute("userId");
+    Object sessionUserId = session.getAttribute("clientId");
     if (sessionUserId == null) {
       throw new ForbiddenResourcesException(
           "userId not found in session for the method, which it requires.");

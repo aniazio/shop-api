@@ -1,8 +1,9 @@
-package com.griddynamics.shopapi.service;
+package com.griddynamics.shopapi.service.impl;
 
 import com.griddynamics.shopapi.dto.ProductDto;
 import com.griddynamics.shopapi.dto.ProductListDto;
 import com.griddynamics.shopapi.repository.ProductRepository;
+import com.griddynamics.shopapi.service.ProductService;
 import org.springframework.stereotype.Service;
 
 @Service
