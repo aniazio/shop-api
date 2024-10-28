@@ -14,14 +14,14 @@ public class OrderDto {
   private final Long id;
   private final double total;
   private final OrderStatus status;
-  private final Long client_id;
+  private final Long userId;
   private final List<OrderItemDto> items = new ArrayList<>();
 
   public OrderDto(OrderDetails orderDetails) {
     id = orderDetails.getId();
-    total = orderDetails.getTotal();
+    total = orderDetails.getTotal().doubleValue();
     status = orderDetails.getStatus();
-    client_id = orderDetails.getClient().getId();
+    userId = orderDetails.getUser().getId();
     orderDetails.getItems().forEach(item -> items.add(new OrderItemDto(item)));
   }
 }

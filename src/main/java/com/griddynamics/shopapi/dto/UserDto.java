@@ -1,6 +1,6 @@
 package com.griddynamics.shopapi.dto;
 
-import com.griddynamics.shopapi.model.Client;
+import com.griddynamics.shopapi.model.User;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -10,14 +10,14 @@ import lombok.ToString;
 @Setter
 @NoArgsConstructor
 @ToString
-public class ClientDto {
+public class UserDto {
   private Long id;
   private String email;
   private String password;
 
-  public ClientDto(Client client) {
-    id = client.getId();
-    email = client.getEmail();
+  public UserDto(User user) {
+    id = user.getId();
+    email = user.getEmail();
     password = null;
   }
 }

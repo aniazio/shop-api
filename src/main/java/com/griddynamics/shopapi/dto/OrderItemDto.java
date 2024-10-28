@@ -19,6 +19,6 @@ public class OrderItemDto {
   public OrderItemDto(OrderItem item) {
     productId = item.getProductId();
     quantity = item.getQuantity();
-    price = item.getPrice();
+    price = item.getPrice().doubleValue();
   }
 }

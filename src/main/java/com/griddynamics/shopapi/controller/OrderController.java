@@ -3,6 +3,7 @@ package com.griddynamics.shopapi.controller;
 import com.griddynamics.shopapi.dto.OrderDto;
 import com.griddynamics.shopapi.dto.OrderListDto;
 import com.griddynamics.shopapi.exception.ForbiddenResourcesException;
+import com.griddynamics.shopapi.exception.UnauthorizedException;
 import com.griddynamics.shopapi.service.OrderService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.web.bind.annotation.*;
@@ -38,8 +39,11 @@ public class OrderController {
   }
 
   private void validateUserId(long userId, HttpSession session) {
-    Object sessionUserId = session.getAttribute("clientId");
-    if (sessionUserId == null || (long) sessionUserId != userId) {
+    Object sessionUserId = session.getAttribute("userId");
+    if (sessionUserId == null) {
+      throw new UnauthorizedException();
+    }
+    if ((long) sessionUserId != userId) {
       throw new ForbiddenResourcesException(
           "Resource for " + userId + " is requested by session with userId: " + sessionUserId);
     }

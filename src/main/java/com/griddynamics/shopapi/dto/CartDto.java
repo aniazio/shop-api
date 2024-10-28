@@ -14,7 +14,7 @@ public class CartDto {
 
   private final Long id;
   private final double total;
-  private final Long clientId;
+  private final Long userId;
   private final List<OrderItemDto> items = new ArrayList<>();
 
   public CartDto(OrderDetails orderDetails) {
@@ -23,8 +23,8 @@ public class CartDto {
           "A try to convert order with inappropriate status to a cart object");
     }
     id = orderDetails.getId();
-    total = orderDetails.getTotal();
-    clientId = orderDetails.getClient().getId();
+    total = orderDetails.getTotal().doubleValue();
+    userId = orderDetails.getUser().getId();
     orderDetails.getItems().forEach(item -> items.add(new OrderItemDto(item)));
   }
 }

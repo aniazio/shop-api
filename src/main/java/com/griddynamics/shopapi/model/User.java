@@ -15,10 +15,11 @@ import lombok.ToString;
 @Setter
 @NoArgsConstructor
 @ToString
-public class Client {
+@Table(name = "UserDetails")
+public class User {
   @Id
-  @SequenceGenerator(name = "seqClient", sequenceName = "CLIENTS_SEQ", allocationSize = 1)
-  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "seqClient")
+  @SequenceGenerator(name = "seqUser", sequenceName = "USERS_SEQ", allocationSize = 1)
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "seqUser")
   private Long id;
 
   @Column(nullable = false)
@@ -27,8 +28,7 @@ public class Client {
   @Column(nullable = false)
   private String password;
 
-
-  @OneToMany(mappedBy = "client", fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
   private Set<OrderDetails> orders = new HashSet<>();
 
   public void encodeAndSetPassword(String password) {
@@ -48,7 +48,7 @@ public class Client {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    Client that = (Client) o;
+    User that = (User) o;
 
     return Objects.equals(email, that.email);
   }

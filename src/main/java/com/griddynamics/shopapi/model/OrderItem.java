@@ -1,6 +1,7 @@
 package com.griddynamics.shopapi.model;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import java.util.Objects;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,7 +26,7 @@ public class OrderItem {
   private int quantity;
 
   @Column(nullable = false)
-  private double price;
+  private BigDecimal price;
 
   @MapsId("orderId")
   @ManyToOne(fetch = FetchType.LAZY, optional = false)

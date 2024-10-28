@@ -20,6 +20,6 @@ public class ProductDto {
     id = product.getId();
     title = product.getTitle();
     available = product.getAvailable();
-    price = product.getPrice();
+    price = product.getPrice().doubleValue();
   }
 }
