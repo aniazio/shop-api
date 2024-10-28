@@ -8,7 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("users")
+@RequestMapping("clients")
 public class ClientController {
 
   private final ClientService clientService;
@@ -21,8 +21,8 @@ public class ClientController {
   public void loginUser(@RequestBody ClientDto clientDto, HttpSession session) {
     CartDto cart = clientService.loginAndReturnCart(clientDto);
 
-    session.setAttribute("cartId", cart);
-    session.setAttribute("userId", clientDto.getId());
+    session.setAttribute("cartId", cart.getId());
+    session.setAttribute("clientId", cart.getClientId());
   }
 
   @ResponseStatus(HttpStatus.CREATED)
@@ -39,7 +39,7 @@ public class ClientController {
 
   @PutMapping("/reset")
   public void resetPassword(
-      @RequestBody ClientDto clientDto, @RequestHeader("Authorization") String token) {
+      @RequestBody ClientDto clientDto, @RequestHeader("Reset-token") String token) {
     clientService.resetPassword(clientDto, token);
   }
 }

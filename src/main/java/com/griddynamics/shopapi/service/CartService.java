@@ -20,4 +20,6 @@ public interface CartService {
   long getIdOfNewCart(SessionInfo sessionInfo);
 
   void clearCart(SessionInfo sessionInfo);
+
+  void addItem(OrderItemDto orderItemDto, SessionInfo sessionInfo);
 }

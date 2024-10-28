@@ -34,7 +34,7 @@ public class OrderDetails {
   @ManyToOne(optional = false)
   private Client client;
 
-  @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
+  @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<OrderItem> items = new LinkedList<>();
 
   public void addProduct(Product product, int quantity) {
@@ -48,7 +48,6 @@ public class OrderDetails {
       item.setOrder(this);
       item.setProduct(product);
       item.setQuantity(quantity);
-      item.setOrdinal(items.size());
       item.setPrice(product.getPrice());
 
       items.add(item);
@@ -74,20 +73,21 @@ public class OrderDetails {
     removeProduct(product.getId());
   }
 
-  public void removeProduct(long productId) {
+  public OrderItem removeProduct(long productId) {
     Optional<OrderItem> itemOp =
         items.stream().filter(item -> item.getProductId() == productId).findAny();
     if (itemOp.isEmpty()) {
-      return;
+      return null;
     }
     OrderItem item = itemOp.get();
     total -= item.getQuantity() * item.getPrice();
     items.remove(item);
+    return item;
   }
 
   public void clearOrder() {
+    items.clear();
     total = 0;
-    items = new LinkedList<>();
   }
 
   public void setClient(Client client) {

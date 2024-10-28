@@ -1,17 +1,16 @@
-package com.griddynamics.shopapi.service;
+package com.griddynamics.shopapi.service.impl;
 
 import com.griddynamics.shopapi.dto.CartDto;
 import com.griddynamics.shopapi.dto.OrderDto;
 import com.griddynamics.shopapi.dto.OrderItemDto;
 import com.griddynamics.shopapi.dto.SessionInfo;
 import com.griddynamics.shopapi.exception.*;
-import com.griddynamics.shopapi.model.Client;
-import com.griddynamics.shopapi.model.OrderDetails;
-import com.griddynamics.shopapi.model.OrderStatus;
-import com.griddynamics.shopapi.model.Product;
+import com.griddynamics.shopapi.model.*;
 import com.griddynamics.shopapi.repository.ClientRepository;
+import com.griddynamics.shopapi.repository.OrderItemRepository;
 import com.griddynamics.shopapi.repository.OrderRepository;
 import com.griddynamics.shopapi.repository.ProductRepository;
+import com.griddynamics.shopapi.service.CartService;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
 
@@ -19,14 +18,17 @@ import org.springframework.stereotype.Service;
 public class CartServiceImpl implements CartService {
 
   private final OrderRepository orderRepository;
+  private final OrderItemRepository orderItemRepository;
   private final ProductRepository productRepository;
   private final ClientRepository clientRepository;
 
   public CartServiceImpl(
       OrderRepository orderRepository,
+      OrderItemRepository orderItemRepository,
       ProductRepository productRepository,
       ClientRepository clientRepository) {
     this.orderRepository = orderRepository;
+    this.orderItemRepository = orderItemRepository;
     this.productRepository = productRepository;
     this.clientRepository = clientRepository;
   }
@@ -51,7 +53,8 @@ public class CartServiceImpl implements CartService {
   public void deleteItemFromCart(long productId, SessionInfo sessionInfo) {
     validateSessionInfo(sessionInfo);
     OrderDetails cart = getCartFromDb(sessionInfo.getCartId());
-    cart.removeProduct(productId);
+    OrderItem orderItem = cart.removeProduct(productId);
+    // orderItemRepository.delete(orderItem);
     orderRepository.save(cart);
   }
 
@@ -97,9 +100,7 @@ public class CartServiceImpl implements CartService {
 
   @Override
   public long getIdOfNewCart(SessionInfo sessionInfo) {
-    validateSessionInfo(sessionInfo);
-
-    Client client = getClientFromDb(sessionInfo.getUserId());
+    Client client = getClientFromDb(sessionInfo.getClientId());
     Optional<OrderDetails> existingCart = orderRepository.findCartByClientId(client.getId());
     if (existingCart.isPresent()) {
       throw new ForbiddenResourcesException("Cart for these user already exists");
@@ -129,9 +130,23 @@ public class CartServiceImpl implements CartService {
     orderRepository.save(cart);
   }
 
+  @Override
+  public void addItem(OrderItemDto orderItemDto, SessionInfo sessionInfo) {
+    validateSessionInfo(sessionInfo);
+    OrderDetails cart = getCartFromDb(sessionInfo.getCartId());
+
+    int diff =
+        cart.updateAndGetDifferenceInProductAmount(
+            orderItemDto.getProductId(), orderItemDto.getQuantity());
+    updateAvailabilityOfProduct(orderItemDto.getProductId(), diff);
+    Optional<Product> productFromDb = productRepository.findById(orderItemDto.getProductId());
+    cart.addProduct(productFromDb.get(), orderItemDto.getQuantity());
+    orderRepository.save(cart);
+  }
+
   private OrderDetails getCartFromDb(long cartId) {
     Optional<OrderDetails> cartFromDb = orderRepository.findById(cartId);
-    if (cartFromDb.isEmpty() || cartFromDb.get().getStatus().equals(OrderStatus.CART)) {
+    if (cartFromDb.isEmpty() || !cartFromDb.get().getStatus().equals(OrderStatus.CART)) {
       throw new CartNotFoundException("Cart with id " + cartId + " not found");
     }
     return cartFromDb.get();
@@ -143,10 +158,10 @@ public class CartServiceImpl implements CartService {
     if (clientIdFromCart.isEmpty()) {
       throw new CartNotFoundException("cart with id " + sessionInfo.getCartId() + " not found");
     }
-    if (clientIdFromCart.get().equals(sessionInfo.getUserId())) {
+    if (!clientIdFromCart.get().equals(sessionInfo.getClientId())) {
       throw new ForbiddenResourcesException(
           "userId "
-              + sessionInfo.getUserId()
+              + sessionInfo.getClientId()
               + " doesn't match info for cart of the id "
               + sessionInfo.getCartId());
     }

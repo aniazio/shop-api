@@ -11,6 +11,6 @@ import lombok.Setter;
 @AllArgsConstructor
 public class SessionInfo {
 
-  private Long userId;
+  private Long clientId;
   private Long cartId;
 }

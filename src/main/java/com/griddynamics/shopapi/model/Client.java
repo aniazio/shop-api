@@ -1,6 +1,6 @@
 package com.griddynamics.shopapi.model;
 
-import com.griddynamics.shopapi.security.Encoder;
+import com.griddynamics.shopapi.util.Encoder;
 import jakarta.persistence.*;
 import java.util.HashSet;
 import java.util.Objects;

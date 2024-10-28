@@ -38,7 +38,7 @@ public class OrderController {
   }
 
   private void validateUserId(long userId, HttpSession session) {
-    Object sessionUserId = session.getAttribute("userId");
+    Object sessionUserId = session.getAttribute("clientId");
     if (sessionUserId == null || (long) sessionUserId != userId) {
       throw new ForbiddenResourcesException(
           "Resource for " + userId + " is requested by session with userId: " + sessionUserId);
