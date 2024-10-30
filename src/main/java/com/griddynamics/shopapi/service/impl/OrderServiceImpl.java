@@ -1,7 +1,6 @@
 package com.griddynamics.shopapi.service.impl;
 
 import com.griddynamics.shopapi.dto.OrderDto;
-import com.griddynamics.shopapi.dto.OrderListDto;
 import com.griddynamics.shopapi.exception.OrderNotFoundException;
 import com.griddynamics.shopapi.model.OrderDetails;
 import com.griddynamics.shopapi.model.OrderStatus;
@@ -9,6 +8,8 @@ import com.griddynamics.shopapi.repository.OrderRepository;
 import com.griddynamics.shopapi.service.OrderService;
 import com.griddynamics.shopapi.service.ProductService;
 import jakarta.transaction.Transactional;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.springframework.stereotype.Service;
@@ -26,12 +27,12 @@ public class OrderServiceImpl implements OrderService {
   }
 
   @Override
-  public OrderListDto getAllOrderFor(long userId) {
+  public List<OrderDto> getAllOrderFor(long userId) {
     Set<OrderDetails> orders = orderRepository.findByUserId(userId);
-    OrderListDto ordersDto = new OrderListDto();
+    List<OrderDto> ordersDto = new ArrayList<>();
     orders.stream()
         .filter(order -> order.getStatus() != OrderStatus.CART)
-        .forEach(order -> ordersDto.addOrder(new OrderDto(order)));
+        .forEach(order -> ordersDto.add(new OrderDto(order)));
     return ordersDto;
   }
 

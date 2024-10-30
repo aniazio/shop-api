@@ -1,7 +1,6 @@
 package com.griddynamics.shopapi.service.impl;
 
 import com.griddynamics.shopapi.dto.ProductDto;
-import com.griddynamics.shopapi.dto.ProductListDto;
 import com.griddynamics.shopapi.exception.WrongOrderException;
 import com.griddynamics.shopapi.model.OrderDetails;
 import com.griddynamics.shopapi.model.OrderItem;
@@ -10,10 +9,7 @@ import com.griddynamics.shopapi.repository.OrderRepository;
 import com.griddynamics.shopapi.repository.ProductRepository;
 import com.griddynamics.shopapi.service.ProductService;
 import jakarta.transaction.Transactional;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -29,9 +25,9 @@ public class ProductServiceImpl implements ProductService {
   }
 
   @Override
-  public ProductListDto getAll() {
-    ProductListDto productsDto = new ProductListDto();
-    productRepository.findAll().forEach(product -> productsDto.addProduct(new ProductDto(product)));
+  public List<ProductDto> getAll() {
+    List<ProductDto> productsDto = new ArrayList<>();
+    productRepository.findAll().forEach(product -> productsDto.add(new ProductDto(product)));
     return productsDto;
   }
 

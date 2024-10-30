@@ -1,6 +1,11 @@
-package com.griddynamics.shopapi.controller;
+package com.griddynamics.shopapi.util;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
+import com.griddynamics.shopapi.controller.UserController;
 import com.griddynamics.shopapi.exception.*;
+import jakarta.servlet.http.HttpSession;
 import java.net.URI;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.ConstraintViolationException;
@@ -37,7 +42,7 @@ public class GlobalControllerAdvice {
   }
 
   @ExceptionHandler(UnauthorizedException.class)
-  public ProblemDetail handleUnauthorizedExceptions(Exception exception) {
+  public ProblemDetail handleUnauthorizedExceptions(HttpSession session, Exception exception) {
     log.error("Handling " + exception.getClass());
     log.error(exception.getMessage());
 
@@ -47,6 +52,8 @@ public class GlobalControllerAdvice {
 
     problemDetail.setType(URI.create(linkToDocs));
     problemDetail.setTitle("Forbidden resource");
+    problemDetail.setProperty(
+        "loginForm", linkTo(methodOn(UserController.class).loginUser(null, session)));
     return problemDetail;
   }
 
@@ -61,11 +68,15 @@ public class GlobalControllerAdvice {
 
     problemDetail.setType(URI.create(linkToDocs));
     problemDetail.setTitle("Wrong credentials");
+    problemDetail.setProperty(
+        "registerForm", linkTo(methodOn(UserController.class).registerUser(null)));
+    problemDetail.setProperty(
+        "resetPasswordForm", linkTo(methodOn(UserController.class).requestPasswordReset(null)));
     return problemDetail;
   }
 
   @ExceptionHandler({ForbiddenResourcesException.class})
-  public ProblemDetail handleForbiddenExceptions(Exception exception) {
+  public ProblemDetail handleForbiddenExceptions(HttpSession session, Exception exception) {
     log.error("Handling " + exception.getClass());
     log.error(exception.getMessage());
 
@@ -74,6 +85,8 @@ public class GlobalControllerAdvice {
 
     problemDetail.setType(URI.create(linkToDocs));
     problemDetail.setTitle("Forbidden resource");
+    problemDetail.setProperty(
+        "loginForm", linkTo(methodOn(UserController.class).loginUser(null, session)));
     return problemDetail;
   }
 

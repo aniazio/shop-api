@@ -1,11 +1,16 @@
 package com.griddynamics.shopapi.controller;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
 import com.griddynamics.shopapi.dto.OrderDto;
-import com.griddynamics.shopapi.dto.OrderListDto;
 import com.griddynamics.shopapi.exception.ForbiddenResourcesException;
 import com.griddynamics.shopapi.exception.UnauthorizedException;
 import com.griddynamics.shopapi.service.OrderService;
 import jakarta.servlet.http.HttpSession;
+import java.util.List;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -19,16 +24,27 @@ public class OrderController {
   }
 
   @GetMapping("")
-  public OrderListDto getAllOrdersFor(@PathVariable long userId, HttpSession session) {
+  public CollectionModel<OrderDto> getAllOrdersFor(@PathVariable Long userId, HttpSession session) {
     validateUserId(userId, session);
-    return orderService.getAllOrderFor(userId);
+    List<OrderDto> returned = orderService.getAllOrderFor(userId);
+
+    CollectionModel<OrderDto> response = CollectionModel.of(returned);
+    response.add(linkTo(methodOn(this.getClass()).getAllOrdersFor(userId, session)).withSelfRel());
+    return response;
   }
 
   @GetMapping("/{orderId}")
-  public OrderDto getOrderFor(
+  public EntityModel<OrderDto> getOrderFor(
       @PathVariable long userId, @PathVariable long orderId, HttpSession session) {
     validateUserId(userId, session);
-    return orderService.getOrderFor(userId, orderId);
+    OrderDto returned = orderService.getOrderFor(userId, orderId);
+
+    EntityModel<OrderDto> response = EntityModel.of(returned);
+    response.add(
+        linkTo(methodOn(this.getClass()).getAllOrdersFor(userId, session)).withRel("allOrders"));
+    response.add(
+        linkTo(methodOn(this.getClass()).getOrderFor(userId, orderId, session)).withSelfRel());
+    return response;
   }
 
   @DeleteMapping("/{orderId}")

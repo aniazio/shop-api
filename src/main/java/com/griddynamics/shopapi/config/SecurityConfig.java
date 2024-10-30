@@ -18,23 +18,26 @@ public class SecurityConfig {
                 authorization
                     .requestMatchers(
                         HttpMethod.GET,
+                        "/",
                         "/products",
                         "/users/*/orders",
                         "/users/*/orders/*",
-                        "/cart")
+                        "/cart",
+                        "/cart/items")
                     .permitAll()
                     .requestMatchers(
                         HttpMethod.POST,
                         "/users/login",
                         "/users/register",
                         "/users/reset",
-                        "/cart/add-item")
+                        "/cart/items")
                     .permitAll()
-                    .requestMatchers(HttpMethod.DELETE, "/users/*/orders/*", "/cart/*", "/cart")
+                    .requestMatchers(
+                        HttpMethod.DELETE, "/users/*/orders/*", "/cart/items/*", "/cart")
                     .permitAll()
                     .requestMatchers(HttpMethod.PUT, "/users/reset", "/cart/checkout")
                     .permitAll()
-                    .requestMatchers(HttpMethod.PATCH, "/cart/update-item")
+                    .requestMatchers(HttpMethod.PATCH, "/cart/items")
                     .permitAll()
                     .requestMatchers("/h2-console/**")
                     .permitAll())
