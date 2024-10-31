@@ -45,7 +45,7 @@ public class OrderServiceImpl implements OrderService {
   @Override
   public void deleteOrder(long userId, long orderId) {
     OrderDetails order = getOrderDetailsFromDb(userId, orderId);
-    productService.resetAvailabilityForOrderClearing(order.getItems());
+    productService.resetAvailabilityWhenOrderCancel(order.getItems());
     order.setStatus(OrderStatus.CANCELED);
     orderRepository.save(order);
   }
@@ -54,7 +54,7 @@ public class OrderServiceImpl implements OrderService {
     Optional<OrderDetails> orderFromDb = orderRepository.findByIdAndUserId(orderId, userId);
     if (orderFromDb.isEmpty()) {
       throw new OrderNotFoundException(
-          "Order with id " + orderId + " not found for the user " + userId);
+          String.format("Order with id %1$d not found for the user %2$d", orderId, userId));
     }
     return orderFromDb.get();
   }

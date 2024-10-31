@@ -17,15 +17,12 @@ public class HomeController {
         Links.of(linkTo(methodOn(ProductController.class).getAll()).withRel("products"))
             .and(
                 linkTo(methodOn(UserController.class).loginUser(null, session))
-                    .withRel("loginForm"))
-            .and(linkTo(methodOn(CartController.class).getCart(session)).withRel("cart"));
+                    .withRel("loginForm"));
 
     if (session.getAttribute("userId") != null) {
-      return response.and(
-          linkTo(
-                  methodOn(OrderController.class)
-                      .getAllOrdersFor((Long) session.getAttribute("userId"), session))
-              .withRel("orders"));
+      return response
+          .and(linkTo(methodOn(CartController.class).getCart(session)).withRel("cart"))
+          .and(linkTo(methodOn(OrderController.class).getAllOrders(session)).withRel("orders"));
     }
     return response;
   }

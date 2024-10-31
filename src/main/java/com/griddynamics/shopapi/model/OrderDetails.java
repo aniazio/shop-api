@@ -1,6 +1,7 @@
 package com.griddynamics.shopapi.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.PositiveOrZero;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -22,6 +23,7 @@ public class OrderDetails {
   private Long id;
 
   @Column(nullable = false)
+  @PositiveOrZero
   private BigDecimal total = BigDecimal.valueOf(0);
 
   @Column(nullable = false)
@@ -36,6 +38,7 @@ public class OrderDetails {
   private User user;
 
   @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OrderBy("addedAt ASC")
   private List<OrderItem> items = new LinkedList<>();
 
   public void addProduct(Product product, int quantity) {
@@ -56,17 +59,16 @@ public class OrderDetails {
     total = total.add(product.getPrice().multiply(BigDecimal.valueOf(quantity)));
   }
 
-  public int updateAndGetDifferenceInProductAmount(long productId, int newAmount) {
+  public void updateProductAmount(long productId, int newAmount) {
     Optional<OrderItem> itemOp =
         items.stream().filter(item -> item.getProductId() == productId).findAny();
     if (itemOp.isEmpty()) {
-      return newAmount;
+      return;
     }
     OrderItem item = itemOp.get();
     int diff = newAmount - item.getQuantity();
     total = total.add(item.getPrice().multiply(BigDecimal.valueOf(diff)));
     item.setQuantity(newAmount);
-    return diff;
   }
 
   public void removeProduct(Product product) {

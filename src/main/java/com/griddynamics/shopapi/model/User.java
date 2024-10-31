@@ -2,6 +2,7 @@ package com.griddynamics.shopapi.model;
 
 import com.griddynamics.shopapi.util.Encoder;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -23,16 +24,17 @@ public class User {
   private Long id;
 
   @Column(nullable = false)
+  @Email
   private String email;
 
-  @Column(nullable = false)
-  private String password;
+  @Column(nullable = false, name = "password")
+  private String encodedPassword;
 
   @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
   private Set<OrderDetails> orders = new HashSet<>();
 
   public void encodeAndSetPassword(String password) {
-    this.password = Encoder.encode(password);
+    this.encodedPassword = Encoder.encode(password);
   }
 
   public void addOrder(OrderDetails order) {

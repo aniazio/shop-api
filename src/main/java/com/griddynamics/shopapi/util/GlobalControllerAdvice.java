@@ -6,12 +6,12 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 import com.griddynamics.shopapi.controller.UserController;
 import com.griddynamics.shopapi.exception.*;
 import jakarta.servlet.http.HttpSession;
-import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.exception.ConstraintViolationException;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -20,11 +20,20 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 @Slf4j
 public class GlobalControllerAdvice {
 
-  @Value("${link.to.swagger.docs.in.repo}")
-  String linkToDocs;
+  @ExceptionHandler(CartNotFoundException.class)
+  public ProblemDetail handleCartNotFoundExceptions(Exception exception) {
+    log.error("Handling " + exception.getClass());
+    log.error(exception.getMessage());
+
+    ProblemDetail problemDetail =
+        ProblemDetail.forStatusAndDetail(
+            HttpStatus.NOT_FOUND, "Your cart is not found. Please try to log in again");
+
+    problemDetail.setTitle("Object not found");
+    return problemDetail;
+  }
 
   @ExceptionHandler({
-    CartNotFoundException.class,
     OrderNotFoundException.class,
     ProductNotFoundException.class,
     UserNotFoundException.class
@@ -36,7 +45,6 @@ public class GlobalControllerAdvice {
     ProblemDetail problemDetail =
         ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getLocalizedMessage());
 
-    problemDetail.setType(URI.create(linkToDocs));
     problemDetail.setTitle("Object not found");
     return problemDetail;
   }
@@ -50,10 +58,9 @@ public class GlobalControllerAdvice {
         ProblemDetail.forStatusAndDetail(
             HttpStatus.UNAUTHORIZED, "Unauthorized access to the resources. Please, log in");
 
-    problemDetail.setType(URI.create(linkToDocs));
     problemDetail.setTitle("Forbidden resource");
     problemDetail.setProperty(
-        "loginForm", linkTo(methodOn(UserController.class).loginUser(null, session)));
+        "loginForm", linkTo(methodOn(UserController.class).loginUser(null, session)).toString());
     return problemDetail;
   }
 
@@ -66,12 +73,12 @@ public class GlobalControllerAdvice {
         ProblemDetail.forStatusAndDetail(
             HttpStatus.UNAUTHORIZED, "Wrong credentials. Please, try again");
 
-    problemDetail.setType(URI.create(linkToDocs));
     problemDetail.setTitle("Wrong credentials");
     problemDetail.setProperty(
-        "registerForm", linkTo(methodOn(UserController.class).registerUser(null)));
+        "registerForm", linkTo(methodOn(UserController.class).registerUser(null)).toString());
     problemDetail.setProperty(
-        "resetPasswordForm", linkTo(methodOn(UserController.class).requestPasswordReset(null)));
+        "resetPasswordForm",
+        linkTo(methodOn(UserController.class).requestPasswordReset(null)).toString());
     return problemDetail;
   }
 
@@ -83,10 +90,9 @@ public class GlobalControllerAdvice {
     ProblemDetail problemDetail =
         ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Try to access forbidden resources");
 
-    problemDetail.setType(URI.create(linkToDocs));
     problemDetail.setTitle("Forbidden resource");
     problemDetail.setProperty(
-        "loginForm", linkTo(methodOn(UserController.class).loginUser(null, session)));
+        "loginForm", linkTo(methodOn(UserController.class).loginUser(null, session)).toString());
     return problemDetail;
   }
 
@@ -102,7 +108,6 @@ public class GlobalControllerAdvice {
     ProblemDetail problemDetail =
         ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getLocalizedMessage());
 
-    problemDetail.setType(URI.create(linkToDocs));
     problemDetail.setTitle("Bad request sent");
     return problemDetail;
   }
@@ -115,20 +120,32 @@ public class GlobalControllerAdvice {
     ProblemDetail problemDetail =
         ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getLocalizedMessage());
 
-    problemDetail.setType(URI.create(linkToDocs));
     problemDetail.setTitle("Invalid user data");
     return problemDetail;
   }
 
-  @ExceptionHandler({ConstraintViolationException.class, MethodArgumentNotValidException.class})
-  ProblemDetail handleValidationException(Exception exception) {
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  ProblemDetail handleValidationException(MethodArgumentNotValidException exception) {
+    Map<String, String> errors = new HashMap<>();
+    exception
+        .getBindingResult()
+        .getAllErrors()
+        .forEach(
+            (error) -> {
+              String fieldName = ((FieldError) error).getField();
+              String errorMessage = error.getDefaultMessage();
+              errors.put(fieldName, errorMessage);
+            });
+    StringBuilder message = new StringBuilder();
+    errors.forEach((field, mess) -> message.append(field + ": " + mess + " "));
+    message.deleteCharAt(message.length() - 1);
+
     log.error("Handling " + exception.getClass());
     log.error(exception.getMessage());
 
     ProblemDetail problemDetail =
-        ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getLocalizedMessage());
+        ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, message.toString());
 
-    problemDetail.setType(URI.create(linkToDocs));
     problemDetail.setTitle("Validation error");
     return problemDetail;
   }
@@ -143,7 +160,6 @@ public class GlobalControllerAdvice {
             HttpStatus.SERVICE_UNAVAILABLE,
             "Unexpected error on the server side. Try again later.");
 
-    problemDetail.setType(URI.create(linkToDocs));
     problemDetail.setTitle("Server exception");
     return problemDetail;
   }

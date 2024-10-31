@@ -9,7 +9,9 @@ import org.springframework.stereotype.Component;
 public class MockPasswordResetter implements PasswordRessetter {
 
   @Override
-  public void sendEmailWithToken(String email, ResetToken savedToken) {
+  public String sendEmailWithToken(String email, ResetToken savedToken) {
     log.info("Mock - sending email for resetting password. Token: " + savedToken.getToken());
+    return "Token for resetting password was printed in the logs.\n"
+        + "Use it as a query parameter with the name 'reset-token' in the PUT request on /reset endpoint";
   }
 }

@@ -1,6 +1,7 @@
 package com.griddynamics.shopapi.service.impl;
 
 import com.griddynamics.shopapi.dto.ProductDto;
+import com.griddynamics.shopapi.exception.ProductNotAvailableException;
 import com.griddynamics.shopapi.exception.WrongOrderException;
 import com.griddynamics.shopapi.model.OrderDetails;
 import com.griddynamics.shopapi.model.OrderItem;
@@ -32,7 +33,7 @@ public class ProductServiceImpl implements ProductService {
   }
 
   @Override
-  public void resetAvailabilityForOrderClearing(List<OrderItem> items) {
+  public void resetAvailabilityWhenOrderCancel(List<OrderItem> items) {
     Set<Product> forSaving = new HashSet<>();
 
     items.forEach(
@@ -49,19 +50,11 @@ public class ProductServiceImpl implements ProductService {
   }
 
   @Override
-  public void validateAndUpdatePrices(OrderDetails order) {
+  public void validateAndUpdatePricesForOrder(OrderDetails order) {
     boolean wrongPrices = false;
 
     for (OrderItem item : order.getItems()) {
-      Optional<Product> productOp = productRepository.findById(item.getProductId());
-      if (productOp.isEmpty()) {
-        throw new WrongOrderException(
-            "Cart has product with id "
-                + item.getProductId()
-                + " which not exists. Please, delete this product from the cart");
-      }
-
-      Product product = productOp.get();
+      Product product = getProductById(item.getProductId());
       if (!product.getPrice().equals(item.getPrice())) {
         order.removeProduct(item.getProductId());
         order.addProduct(product, item.getQuantity());
@@ -72,9 +65,58 @@ public class ProductServiceImpl implements ProductService {
     if (wrongPrices) {
       orderRepository.save(order);
       throw new WrongOrderException(
-          "Cart with id"
-              + order.getId()
-              + " has wrong prices. Prices was updated. Please, resubmit order");
+          String.format(
+              "Cart with id %d had wrong prices. Prices were updated. Please, resubmit order",
+              order.getId()));
+    }
+  }
+
+  @Override
+  public boolean isAvailableProductWithAmount(long productId, int amount) {
+    Product product = getProductById(productId);
+    return product.getAvailable() >= amount;
+  }
+
+  @Override
+  public Product getProductById(long productId) {
+    Optional<Product> productOp = productRepository.findById(productId);
+    if (productOp.isEmpty()) {
+      throw new WrongOrderException(
+          String.format(
+              "Cart has product with id %d which doesn't exist. Please, delete this product from the cart",
+              productId));
+    }
+
+    return productOp.get();
+  }
+
+  @Override
+  public void updateAvailabilityOfProductsIn(OrderDetails order) {
+    boolean isAvailable = true;
+    List<Product> productsFromDb = new ArrayList<>();
+
+    for (OrderItem item : order.getItems()) {
+      Product product = getProductById(item.getProductId());
+      if (product.getAvailable() < item.getQuantity()) {
+        isAvailable = false;
+        item.setQuantity(product.getAvailable());
+      } else {
+        productsFromDb.add(product);
+      }
+    }
+    if (!isAvailable) {
+      orderRepository.save(order);
+      throw new ProductNotAvailableException(
+          "Products in a cart are unavailable now. Cart was updated. Try to checkout again");
+    }
+
+    for (int i = 0; i < productsFromDb.size(); i++) {
+      Product product = productsFromDb.get(i);
+      OrderItem item = order.getItems().get(i);
+
+      assert product.getId() == item.getProductId();
+
+      product.setAvailable(product.getAvailable() - item.getQuantity());
     }
   }
 }

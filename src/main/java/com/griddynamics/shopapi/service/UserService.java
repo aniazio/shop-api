@@ -11,5 +11,5 @@ public interface UserService {
 
   CartDto loginAndReturnCart(UserDto userDto);
 
-  void startResettingPassword(UserDto userDto);
+  String startResettingPassword(UserDto userDto);
 }

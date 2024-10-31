@@ -11,6 +11,7 @@ import com.griddynamics.shopapi.exception.ForbiddenResourcesException;
 import com.griddynamics.shopapi.exception.UnauthorizedException;
 import com.griddynamics.shopapi.service.CartService;
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import java.net.URI;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
@@ -59,7 +60,7 @@ public class CartController {
 
   @PostMapping("/items")
   public ResponseEntity<Void> addItemToCart(
-      @RequestBody OrderItemDto orderItemDto, HttpSession session) {
+      @RequestBody @Valid OrderItemDto orderItemDto, HttpSession session) {
     SessionInfo sessionInfo = authorizeAndGetSessionInfo(session);
     cartService.addItem(orderItemDto, sessionInfo);
 
@@ -71,7 +72,7 @@ public class CartController {
 
   @PatchMapping("/items")
   public ResponseEntity<Void> updateItemAmount(
-      @RequestBody OrderItemDto orderItemDto, HttpSession session) {
+      @RequestBody @Valid OrderItemDto orderItemDto, HttpSession session) {
     SessionInfo sessionInfo = authorizeAndGetSessionInfo(session);
     cartService.updateItemAmount(orderItemDto, sessionInfo);
 
@@ -90,10 +91,7 @@ public class CartController {
     EntityModel<OrderDto> response = EntityModel.of(order);
     response.add(linkTo(methodOn(this.getClass()).getCart(session)).withRel("newCart"));
     response.add(
-        linkTo(
-                methodOn(OrderController.class)
-                    .getOrderFor(order.getUserId(), order.getId(), session))
-            .withSelfRel());
+        linkTo(methodOn(OrderController.class).getOrder(order.getId(), session)).withSelfRel());
     return response;
   }
 
