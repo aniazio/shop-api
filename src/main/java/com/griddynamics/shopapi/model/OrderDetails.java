@@ -35,6 +35,7 @@ public class OrderDetails {
   private OrderStatus status;
 
   @ManyToOne(optional = false)
+  @ToString.Exclude
   private User user;
 
   @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)

@@ -16,9 +16,9 @@ public interface OrderRepository extends CrudRepository<OrderDetails, Long> {
   @Query(
       value = "SELECT * FROM Order_Details o WHERE o.status='CART' AND o.user_id=?1",
       nativeQuery = true)
-  Optional<OrderDetails> findCartByUserId(long clientId);
+  Optional<OrderDetails> findCartByUserId(long userId);
 
-  Set<OrderDetails> findByUserId(long clientId);
+  Set<OrderDetails> findByUserId(long userId);
 
-  Optional<OrderDetails> findByIdAndUserId(long id, long clientId);
+  Optional<OrderDetails> findByIdAndUserId(long id, long userId);
 }

@@ -53,24 +53,6 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public void resetPassword(UserDto userDto, String token) {
-    User user = getUserFromDb(userDto.getEmail());
-    Optional<ResetToken> tokenFromDbOp = tokenRepository.findById(user.getId());
-    if (tokenFromDbOp.isEmpty()) {
-      throw new ForbiddenResourcesException(
-          String.format("Token is not present for user with id %d", user.getId()));
-    }
-    ResetToken tokenFromDb = tokenFromDbOp.get();
-    if (!token.equals(tokenFromDb.getToken()) || tokenFromDb.isExpired()) {
-      throw new ForbiddenResourcesException(
-          String.format("Token for user with id %d is expired", user.getId()));
-    }
-    tokenRepository.delete(tokenFromDb);
-    user.encodeAndSetPassword(userDto.getPassword());
-    userRepository.save(user);
-  }
-
-  @Override
   public CartDto loginAndReturnCart(UserDto userDto) {
     User user = getUserFromDb(userDto.getEmail());
     if (!Encoder.matches(userDto.getPassword(), user.getEncodedPassword())) {
@@ -97,6 +79,24 @@ public class UserServiceImpl implements UserService {
     resetToken.setUser(user);
     ResetToken savedToken = tokenRepository.save(resetToken);
     return passwordRessetter.sendEmailWithToken(userDto.getEmail(), savedToken);
+  }
+
+  @Override
+  public void resetPassword(UserDto userDto, String token) {
+    User user = getUserFromDb(userDto.getEmail());
+    Optional<ResetToken> tokenFromDbOp = tokenRepository.findById(user.getId());
+    if (tokenFromDbOp.isEmpty()) {
+      throw new ForbiddenResourcesException(
+          String.format("Token is not present for user with id %d", user.getId()));
+    }
+    ResetToken tokenFromDb = tokenFromDbOp.get();
+    if (!token.equals(tokenFromDb.getToken()) || tokenFromDb.isExpired()) {
+      throw new ForbiddenResourcesException(
+          String.format("Token for user with id %d is expired", user.getId()));
+    }
+    tokenRepository.delete(tokenFromDb);
+    user.encodeAndSetPassword(userDto.getPassword());
+    userRepository.save(user);
   }
 
   private User getUserFromDb(String userEmail) {

@@ -5,10 +5,7 @@ import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Objects;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 @Entity
@@ -49,6 +46,7 @@ public class OrderItem {
   public void setProduct(Product product) {
     this.id.setProductId(product.getId());
   }
+
 
   @Override
   public boolean equals(Object o) {

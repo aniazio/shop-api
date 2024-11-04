@@ -39,16 +39,6 @@ public class CartServiceImpl implements CartService {
   }
 
   @Override
-  public CartDto getCartFor(long userId) {
-    Optional<OrderDetails> cartFromDb = orderRepository.findCartByUserId(userId);
-    if (cartFromDb.isEmpty() || cartFromDb.get().getStatus().equals(OrderStatus.CART)) {
-      throw new CartNotFoundException(
-          String.format("Cart not found for a user with id %d", userId));
-    }
-    return new CartDto(cartFromDb.get());
-  }
-
-  @Override
   public void deleteItemFromCart(long productId, SessionInfo sessionInfo) {
     validateSessionInfo(sessionInfo);
     OrderDetails cart = getCartFromDb(sessionInfo.getCartId());
@@ -82,7 +72,7 @@ public class CartServiceImpl implements CartService {
       throw new ConversionException("Empty cart cannot be convert to ordered order");
     }
     productService.validateAndUpdatePricesForOrder(cart);
-    productService.updateAvailabilityOfProductsIn(cart);
+    productService.updateAvailabilityForProductsIn(cart);
 
     cart.setStatus(OrderStatus.ORDERED);
     orderRepository.save(cart);
@@ -104,14 +94,6 @@ public class CartServiceImpl implements CartService {
     OrderDetails savedCart = orderRepository.save(newCart);
 
     return savedCart.getId();
-  }
-
-  private User getClientFromDb(long userId) {
-    Optional<User> userFromDb = userRepository.findById(userId);
-    if (userFromDb.isEmpty()) {
-      throw new UserNotFoundException(String.format("user with id %d not found", userId));
-    }
-    return userFromDb.get();
   }
 
   @Override
@@ -139,6 +121,14 @@ public class CartServiceImpl implements CartService {
         productService.getProductById(orderItemDto.getProductId()), orderItemDto.getQuantity());
 
     orderRepository.save(cart);
+  }
+
+  private User getClientFromDb(long userId) {
+    Optional<User> userFromDb = userRepository.findById(userId);
+    if (userFromDb.isEmpty()) {
+      throw new UserNotFoundException(String.format("user with id %d not found", userId));
+    }
+    return userFromDb.get();
   }
 
   private OrderDetails getCartFromDb(long cartId) {

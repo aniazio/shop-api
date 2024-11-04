@@ -9,8 +9,6 @@ public interface CartService {
 
   CartDto getCartFor(SessionInfo sessionInfo);
 
-  CartDto getCartFor(long clientId);
-
   void deleteItemFromCart(long productId, SessionInfo sessionInfo);
 
   void updateItemAmount(OrderItemDto orderItemDto, SessionInfo sessionInfo);

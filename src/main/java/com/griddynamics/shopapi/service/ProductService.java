@@ -9,7 +9,7 @@ import java.util.List;
 public interface ProductService {
   List<ProductDto> getAll();
 
-  void resetAvailabilityWhenOrderCancel(List<OrderItem> items);
+  void addItemsToAvailable(List<OrderItem> items);
 
   void validateAndUpdatePricesForOrder(OrderDetails order);
 
@@ -17,5 +17,5 @@ public interface ProductService {
 
   Product getProductById(long productId);
 
-  void updateAvailabilityOfProductsIn(OrderDetails order);
+  void updateAvailabilityForProductsIn(OrderDetails order);
 }

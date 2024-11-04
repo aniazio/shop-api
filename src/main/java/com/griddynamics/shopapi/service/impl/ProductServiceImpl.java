@@ -2,6 +2,7 @@ package com.griddynamics.shopapi.service.impl;
 
 import com.griddynamics.shopapi.dto.ProductDto;
 import com.griddynamics.shopapi.exception.ProductNotAvailableException;
+import com.griddynamics.shopapi.exception.ProductNotFoundException;
 import com.griddynamics.shopapi.exception.WrongOrderException;
 import com.griddynamics.shopapi.model.OrderDetails;
 import com.griddynamics.shopapi.model.OrderItem;
@@ -10,6 +11,7 @@ import com.griddynamics.shopapi.repository.OrderRepository;
 import com.griddynamics.shopapi.repository.ProductRepository;
 import com.griddynamics.shopapi.service.ProductService;
 import jakarta.transaction.Transactional;
+import java.math.BigDecimal;
 import java.util.*;
 import org.springframework.stereotype.Service;
 
@@ -33,7 +35,7 @@ public class ProductServiceImpl implements ProductService {
   }
 
   @Override
-  public void resetAvailabilityWhenOrderCancel(List<OrderItem> items) {
+  public void addItemsToAvailable(List<OrderItem> items) {
     Set<Product> forSaving = new HashSet<>();
 
     items.forEach(
@@ -56,8 +58,13 @@ public class ProductServiceImpl implements ProductService {
     for (OrderItem item : order.getItems()) {
       Product product = getProductById(item.getProductId());
       if (!product.getPrice().equals(item.getPrice())) {
-        order.removeProduct(item.getProductId());
-        order.addProduct(product, item.getQuantity());
+        order.setTotal(
+            order
+                .getTotal()
+                .subtract(item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()))));
+        item.setPrice(product.getPrice());
+        order.setTotal(
+            order.getTotal().add(item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()))));
         wrongPrices = true;
       }
     }
@@ -66,7 +73,7 @@ public class ProductServiceImpl implements ProductService {
       orderRepository.save(order);
       throw new WrongOrderException(
           String.format(
-              "Cart with id %d had wrong prices. Prices were updated. Please, resubmit order",
+              "Cart with id %d had wrong prices. Prices were updated, but ordered operation was aborted",
               order.getId()));
     }
   }
@@ -81,17 +88,15 @@ public class ProductServiceImpl implements ProductService {
   public Product getProductById(long productId) {
     Optional<Product> productOp = productRepository.findById(productId);
     if (productOp.isEmpty()) {
-      throw new WrongOrderException(
-          String.format(
-              "Cart has product with id %d which doesn't exist. Please, delete this product from the cart",
-              productId));
+      throw new ProductNotFoundException(
+          String.format("Product with id %d which doesn't exist", productId));
     }
 
     return productOp.get();
   }
 
   @Override
-  public void updateAvailabilityOfProductsIn(OrderDetails order) {
+  public void updateAvailabilityForProductsIn(OrderDetails order) {
     boolean isAvailable = true;
     List<Product> productsFromDb = new ArrayList<>();
 
@@ -99,7 +104,15 @@ public class ProductServiceImpl implements ProductService {
       Product product = getProductById(item.getProductId());
       if (product.getAvailable() < item.getQuantity()) {
         isAvailable = false;
+        order.setTotal(
+            order
+                .getTotal()
+                .subtract(product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()))));
         item.setQuantity(product.getAvailable());
+        order.setTotal(
+            order
+                .getTotal()
+                .add(product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()))));
       } else {
         productsFromDb.add(product);
       }
@@ -107,9 +120,10 @@ public class ProductServiceImpl implements ProductService {
     if (!isAvailable) {
       orderRepository.save(order);
       throw new ProductNotAvailableException(
-          "Products in a cart are unavailable now. Cart was updated. Try to checkout again");
+          "Products in a cart are unavailable now. Cart was updated, but ordered operation was aborted");
     }
 
+    Set<Product> forSaving = new HashSet<>();
     for (int i = 0; i < productsFromDb.size(); i++) {
       Product product = productsFromDb.get(i);
       OrderItem item = order.getItems().get(i);
@@ -117,6 +131,8 @@ public class ProductServiceImpl implements ProductService {
       assert product.getId() == item.getProductId();
 
       product.setAvailable(product.getAvailable() - item.getQuantity());
+      forSaving.add(product);
     }
+    productRepository.saveAll(forSaving);
   }
 }

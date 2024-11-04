@@ -25,7 +25,7 @@ public class OrderController {
   @GetMapping("")
   public CollectionModel<OrderDto> getAllOrders(HttpSession session) {
     long userId = getUserId(session);
-    List<OrderDto> returned = orderService.getAllOrderFor(userId);
+    List<OrderDto> returned = orderService.getAllOrderForUser(userId);
 
     CollectionModel<OrderDto> response = CollectionModel.of(returned);
     response.add(linkTo(methodOn(this.getClass()).getAllOrders(session)).withSelfRel());
@@ -35,7 +35,7 @@ public class OrderController {
   @GetMapping("/{orderId}")
   public EntityModel<OrderDto> getOrder(@PathVariable long orderId, HttpSession session) {
     long userId = getUserId(session);
-    OrderDto returned = orderService.getOrderFor(userId, orderId);
+    OrderDto returned = orderService.getOrderForUser(userId, orderId);
 
     EntityModel<OrderDto> response = EntityModel.of(returned);
     response.add(linkTo(methodOn(this.getClass()).getAllOrders(session)).withRel("allOrders"));
@@ -46,7 +46,7 @@ public class OrderController {
   @DeleteMapping("/{orderId}")
   public void deleteOrder(@PathVariable long orderId, HttpSession session) {
     long userId = getUserId(session);
-    orderService.deleteOrder(userId, orderId);
+    orderService.cancelOrder(userId, orderId);
   }
 
   private Long getUserId(HttpSession session) {
