@@ -22,9 +22,10 @@ public class ProductDto {
   @Length(min = 3, max = 200)
   private String title;
 
-  @PositiveOrZero private int available;
+  @PositiveOrZero(message = "There cannot be negative number of units available")
+  private int available;
 
-  @Positive
+  @Positive(message = "Price should be a positive value")
   @Digits(integer = 6, fraction = 2)
   private double price;
 

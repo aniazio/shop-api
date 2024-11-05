@@ -10,7 +10,4 @@ public class UnauthorizedException extends RuntimeException {
     super("user not logged");
   }
 
-  public UnauthorizedException(String message) {
-    super(message);
-  }
 }

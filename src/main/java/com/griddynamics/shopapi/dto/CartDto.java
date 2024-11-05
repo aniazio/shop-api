@@ -16,7 +16,8 @@ import lombok.ToString;
 @ToString
 public class CartDto {
 
-  @Positive private final Long id;
+  @Positive(message = "Wrong id format")
+  private final Long id;
 
   @JsonProperty(access = JsonProperty.Access.READ_ONLY)
   private final double total;

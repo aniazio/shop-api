@@ -20,17 +20,20 @@ import org.springframework.hateoas.RepresentationModel;
 @ToString
 public class OrderDto extends RepresentationModel<OrderDto> {
   @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-  @Positive
-  private final Long id;
+  @Positive(message = "Wrong id format")
+  private final long id;
 
   @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-  @PositiveOrZero
+  @PositiveOrZero(message = "Total must be a positive value")
   private final double total;
 
   @JsonProperty(access = JsonProperty.Access.READ_ONLY)
   private final OrderStatus status;
 
-  @JsonIgnore @Positive private final Long userId;
+  @JsonIgnore
+  @Positive(message = "Wrong id format")
+  private final long userId;
+
   private final List<OrderItemDto> items = new ArrayList<>();
 
   public OrderDto(OrderDetails orderDetails) {

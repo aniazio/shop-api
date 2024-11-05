@@ -18,7 +18,9 @@ public class OrderItemDto {
 
   private Integer id;
   private Long productId;
-  @Positive private int quantity;
+
+  @Positive(message = "Quantity must be positive")
+  private int quantity;
 
   @JsonProperty(access = JsonProperty.Access.READ_ONLY)
   private double price;

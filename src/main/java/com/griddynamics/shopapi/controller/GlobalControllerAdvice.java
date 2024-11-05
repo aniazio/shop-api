@@ -1,17 +1,14 @@
-package com.griddynamics.shopapi.util;
+package com.griddynamics.shopapi.controller;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
-import com.griddynamics.shopapi.controller.UserController;
 import com.griddynamics.shopapi.exception.*;
 import jakarta.servlet.http.HttpSession;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -29,7 +26,7 @@ public class GlobalControllerAdvice {
         ProblemDetail.forStatusAndDetail(
             HttpStatus.NOT_FOUND, "Your cart is not found. Please try to log in again");
 
-    problemDetail.setTitle("Object not found");
+    problemDetail.setTitle("Resource not found");
     return problemDetail;
   }
 
@@ -45,7 +42,7 @@ public class GlobalControllerAdvice {
     ProblemDetail problemDetail =
         ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getLocalizedMessage());
 
-    problemDetail.setTitle("Object not found");
+    problemDetail.setTitle("Resource not found");
     return problemDetail;
   }
 
@@ -58,7 +55,7 @@ public class GlobalControllerAdvice {
         ProblemDetail.forStatusAndDetail(
             HttpStatus.UNAUTHORIZED, "Unauthorized access to the resources. Please, log in");
 
-    problemDetail.setTitle("Forbidden resource");
+    problemDetail.setTitle("Unauthorized");
     problemDetail.setProperty(
         "loginForm", linkTo(methodOn(UserController.class).loginUser(null, session)).toString());
     return problemDetail;
@@ -126,19 +123,16 @@ public class GlobalControllerAdvice {
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
   ProblemDetail handleValidationException(MethodArgumentNotValidException exception) {
-    Map<String, String> errors = new HashMap<>();
+    StringBuilder message = new StringBuilder();
     exception
         .getBindingResult()
         .getAllErrors()
         .forEach(
             (error) -> {
-              String fieldName = ((FieldError) error).getField();
-              String errorMessage = error.getDefaultMessage();
-              errors.put(fieldName, errorMessage);
+              message.append(" ").append(error.getDefaultMessage());
             });
-    StringBuilder message = new StringBuilder();
-    errors.forEach((field, mess) -> message.append(field + ": " + mess + " "));
-    message.deleteCharAt(message.length() - 1);
+
+    message.deleteCharAt(0);
 
     log.error("Handling " + exception.getClass());
     log.error(exception.getMessage());

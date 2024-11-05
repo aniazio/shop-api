@@ -15,10 +15,12 @@ import lombok.ToString;
 @ToString
 public class UserDto {
   @JsonIgnore private Long id;
-  @Email private String email;
+
+  @Email(message = "Wrong email format")
+  private String email;
 
   @Pattern(
-      regexp = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{5,}$",
+      regexp = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*()])[A-Za-z\\d!@#$%^&*()]{5,}$",
       message =
           "Password must be at least 5 characters long, with at least one letter, one digit, and one special character")
   private String password;
