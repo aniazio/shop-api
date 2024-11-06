@@ -1,14 +1,19 @@
 package com.griddynamics.shopapi.controller;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
 import com.griddynamics.shopapi.dto.OrderDto;
-import com.griddynamics.shopapi.dto.OrderListDto;
-import com.griddynamics.shopapi.exception.ForbiddenResourcesException;
+import com.griddynamics.shopapi.exception.UnauthorizedException;
 import com.griddynamics.shopapi.service.OrderService;
 import jakarta.servlet.http.HttpSession;
+import java.util.List;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("users/{userId}/orders")
+@RequestMapping("/orders")
 public class OrderController {
 
   private final OrderService orderService;
@@ -18,30 +23,37 @@ public class OrderController {
   }
 
   @GetMapping("")
-  public OrderListDto getAllOrdersFor(@PathVariable long userId, HttpSession session) {
-    validateUserId(userId, session);
-    return orderService.getAllOrderFor(userId);
+  public CollectionModel<OrderDto> getAllOrders(HttpSession session) {
+    long userId = getUserId(session);
+    List<OrderDto> returned = orderService.getAllOrderForUser(userId);
+
+    CollectionModel<OrderDto> response = CollectionModel.of(returned);
+    response.add(linkTo(methodOn(this.getClass()).getAllOrders(session)).withSelfRel());
+    return response;
   }
 
   @GetMapping("/{orderId}")
-  public OrderDto getOrderFor(
-      @PathVariable long userId, @PathVariable long orderId, HttpSession session) {
-    validateUserId(userId, session);
-    return orderService.getOrderFor(userId, orderId);
+  public EntityModel<OrderDto> getOrder(@PathVariable long orderId, HttpSession session) {
+    long userId = getUserId(session);
+    OrderDto returned = orderService.getOrderForUser(userId, orderId);
+
+    EntityModel<OrderDto> response = EntityModel.of(returned);
+    response.add(linkTo(methodOn(this.getClass()).getAllOrders(session)).withRel("allOrders"));
+    response.add(linkTo(methodOn(this.getClass()).getOrder(orderId, session)).withSelfRel());
+    return response;
   }
 
   @DeleteMapping("/{orderId}")
-  public void deleteOrder(
-      @PathVariable long userId, @PathVariable long orderId, HttpSession session) {
-    validateUserId(userId, session);
-    orderService.deleteOrder(userId, orderId);
+  public void cancelOrder(@PathVariable long orderId, HttpSession session) {
+    long userId = getUserId(session);
+    orderService.cancelOrder(userId, orderId);
   }
 
-  private void validateUserId(long userId, HttpSession session) {
-    Object sessionUserId = session.getAttribute("clientId");
-    if (sessionUserId == null || (long) sessionUserId != userId) {
-      throw new ForbiddenResourcesException(
-          "Resource for " + userId + " is requested by session with userId: " + sessionUserId);
+  private Long getUserId(HttpSession session) {
+    Object sessionUserId = session.getAttribute("userId");
+    if (sessionUserId == null) {
+      throw new UnauthorizedException();
     }
+    return (long) sessionUserId;
   }
 }

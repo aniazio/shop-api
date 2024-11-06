@@ -6,31 +6,29 @@ import com.griddynamics.shopapi.dto.OrderItemDto;
 import com.griddynamics.shopapi.dto.SessionInfo;
 import com.griddynamics.shopapi.exception.*;
 import com.griddynamics.shopapi.model.*;
-import com.griddynamics.shopapi.repository.ClientRepository;
-import com.griddynamics.shopapi.repository.OrderItemRepository;
 import com.griddynamics.shopapi.repository.OrderRepository;
-import com.griddynamics.shopapi.repository.ProductRepository;
+import com.griddynamics.shopapi.repository.UserRepository;
 import com.griddynamics.shopapi.service.CartService;
+import com.griddynamics.shopapi.service.ProductService;
+import jakarta.transaction.Transactional;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
 
 @Service
+@Transactional
 public class CartServiceImpl implements CartService {
 
   private final OrderRepository orderRepository;
-  private final OrderItemRepository orderItemRepository;
-  private final ProductRepository productRepository;
-  private final ClientRepository clientRepository;
+  private final UserRepository userRepository;
+  private final ProductService productService;
 
   public CartServiceImpl(
       OrderRepository orderRepository,
-      OrderItemRepository orderItemRepository,
-      ProductRepository productRepository,
-      ClientRepository clientRepository) {
+      UserRepository userRepository,
+      ProductService productService) {
     this.orderRepository = orderRepository;
-    this.orderItemRepository = orderItemRepository;
-    this.productRepository = productRepository;
-    this.clientRepository = clientRepository;
+    this.userRepository = userRepository;
+    this.productService = productService;
   }
 
   @Override
@@ -41,58 +39,41 @@ public class CartServiceImpl implements CartService {
   }
 
   @Override
-  public CartDto getCartFor(long clientId) {
-    Optional<OrderDetails> cartFromDb = orderRepository.findCartByClientId(clientId);
-    if (cartFromDb.isEmpty() || cartFromDb.get().getStatus().equals(OrderStatus.CART)) {
-      throw new CartNotFoundException("Cart not found for client with id " + clientId);
-    }
-    return new CartDto(cartFromDb.get());
-  }
-
-  @Override
   public void deleteItemFromCart(long productId, SessionInfo sessionInfo) {
     validateSessionInfo(sessionInfo);
     OrderDetails cart = getCartFromDb(sessionInfo.getCartId());
-    OrderItem orderItem = cart.removeProduct(productId);
-    // orderItemRepository.delete(orderItem);
+    cart.removeProduct(productId);
     orderRepository.save(cart);
   }
 
   @Override
   public void updateItemAmount(OrderItemDto orderItemDto, SessionInfo sessionInfo) {
     validateSessionInfo(sessionInfo);
-    OrderDetails cart = getCartFromDb(sessionInfo.getCartId());
+    if (!productService.isAvailableProductWithAmount(
+        orderItemDto.getProductId(), orderItemDto.getQuantity())) {
+      throw new ProductNotAvailableException(
+          String.format(
+              "There is no %1$d units of product with id %2$d",
+              orderItemDto.getQuantity(), orderItemDto.getProductId()));
+    }
 
-    int diff =
-        cart.updateAndGetDifferenceInProductAmount(
-            orderItemDto.getProductId(), orderItemDto.getQuantity());
-    updateAvailabilityOfProduct(orderItemDto.getProductId(), diff);
+    OrderDetails cart = getCartFromDb(sessionInfo.getCartId());
+    fillOrderItemInfo(orderItemDto, cart);
+    cart.updateProductAmount(orderItemDto.getProductId(), orderItemDto.getQuantity());
 
     orderRepository.save(cart);
-  }
-
-  private void updateAvailabilityOfProduct(long productId, int diff) {
-    Optional<Product> productFromDb = productRepository.findById(productId);
-    if (productFromDb.isEmpty()) {
-      throw new ProductNotFoundException("product with id " + productId + " not found");
-    }
-
-    Product product = productFromDb.get();
-    if (product.getAvailable() < diff) {
-      throw new ProductNotAvailableException(
-          "Cannot update the product with id "
-              + productId
-              + " in the cart, because there are not enough units available");
-    }
-
-    product.setAvailable(product.getAvailable() - diff);
-    productRepository.save(product);
   }
 
   @Override
   public OrderDto checkout(SessionInfo sessionInfo) {
     validateSessionInfo(sessionInfo);
     OrderDetails cart = getCartFromDb(sessionInfo.getCartId());
+    if (cart.getTotal().doubleValue() <= 0) {
+      throw new ConversionException("Empty cart cannot be convert to ordered order");
+    }
+    productService.validateAndUpdatePricesForOrder(cart);
+    productService.updateAvailabilityForProductsIn(cart);
+
     cart.setStatus(OrderStatus.ORDERED);
     orderRepository.save(cart);
     return new OrderDto(cart);
@@ -100,26 +81,19 @@ public class CartServiceImpl implements CartService {
 
   @Override
   public long getIdOfNewCart(SessionInfo sessionInfo) {
-    Client client = getClientFromDb(sessionInfo.getClientId());
-    Optional<OrderDetails> existingCart = orderRepository.findCartByClientId(client.getId());
+    User user = getClientFromDb(sessionInfo.getUserId());
+    Optional<OrderDetails> existingCart = orderRepository.findCartByUserId(user.getId());
     if (existingCart.isPresent()) {
-      throw new ForbiddenResourcesException("Cart for these user already exists");
+      throw new ForbiddenResourcesException(
+          String.format("Cart for user with id %d already exists", user.getId()));
     }
 
     OrderDetails newCart = new OrderDetails();
     newCart.setStatus(OrderStatus.CART);
-    newCart.setClient(client);
+    newCart.setUser(user);
     OrderDetails savedCart = orderRepository.save(newCart);
 
     return savedCart.getId();
-  }
-
-  private Client getClientFromDb(long clientId) {
-    Optional<Client> clientFromDb = clientRepository.findById(clientId);
-    if (clientFromDb.isEmpty()) {
-      throw new ClientNotFoundException("client with id " + clientId + " not found");
-    }
-    return clientFromDb.get();
   }
 
   @Override
@@ -133,37 +107,64 @@ public class CartServiceImpl implements CartService {
   @Override
   public void addItem(OrderItemDto orderItemDto, SessionInfo sessionInfo) {
     validateSessionInfo(sessionInfo);
-    OrderDetails cart = getCartFromDb(sessionInfo.getCartId());
+    if (!productService.isAvailableProductWithAmount(
+        orderItemDto.getProductId(), orderItemDto.getQuantity())) {
+      throw new ProductNotAvailableException(
+          String.format(
+              "There is no %1$d units of product with id %2$d",
+              orderItemDto.getQuantity(), orderItemDto.getProductId()));
+    }
 
-    int diff =
-        cart.updateAndGetDifferenceInProductAmount(
-            orderItemDto.getProductId(), orderItemDto.getQuantity());
-    updateAvailabilityOfProduct(orderItemDto.getProductId(), diff);
-    Optional<Product> productFromDb = productRepository.findById(orderItemDto.getProductId());
-    cart.addProduct(productFromDb.get(), orderItemDto.getQuantity());
+    OrderDetails cart = getCartFromDb(sessionInfo.getCartId());
+    fillOrderItemInfo(orderItemDto, cart);
+    cart.addProduct(
+        productService.getProductById(orderItemDto.getProductId()), orderItemDto.getQuantity());
+
     orderRepository.save(cart);
+  }
+
+  private User getClientFromDb(long userId) {
+    Optional<User> userFromDb = userRepository.findById(userId);
+    if (userFromDb.isEmpty()) {
+      throw new UserNotFoundException(String.format("user with id %d not found", userId));
+    }
+    return userFromDb.get();
   }
 
   private OrderDetails getCartFromDb(long cartId) {
     Optional<OrderDetails> cartFromDb = orderRepository.findById(cartId);
     if (cartFromDb.isEmpty() || !cartFromDb.get().getStatus().equals(OrderStatus.CART)) {
-      throw new CartNotFoundException("Cart with id " + cartId + " not found");
+      throw new CartNotFoundException(String.format("Cart with id %d not found", cartId));
     }
     return cartFromDb.get();
   }
 
   private void validateSessionInfo(SessionInfo sessionInfo) {
-    Optional<Long> clientIdFromCart =
-        orderRepository.findClientIdByIdAndStatusIsCart(sessionInfo.getCartId());
-    if (clientIdFromCart.isEmpty()) {
-      throw new CartNotFoundException("cart with id " + sessionInfo.getCartId() + " not found");
+    Optional<Long> userIdFromCart =
+        orderRepository.findUserIdByIdAndStatusIsCart(sessionInfo.getCartId());
+    if (userIdFromCart.isEmpty()) {
+      throw new CartNotFoundException(
+          String.format("Cart with id %d not found", sessionInfo.getCartId()));
     }
-    if (!clientIdFromCart.get().equals(sessionInfo.getClientId())) {
+    if (!userIdFromCart.get().equals(sessionInfo.getUserId())) {
       throw new ForbiddenResourcesException(
-          "userId "
-              + sessionInfo.getClientId()
-              + " doesn't match info for cart of the id "
-              + sessionInfo.getCartId());
+          String.format(
+              "userId %1$d doesn't match info for cart on the id %2$d",
+              sessionInfo.getUserId(), sessionInfo.getCartId()));
+    }
+  }
+
+  private void fillOrderItemInfo(OrderItemDto orderItemDto, OrderDetails cart) {
+    if (orderItemDto.getProductId() == null) {
+
+      if (orderItemDto.getId() >= cart.getItems().size()) {
+        throw new ConversionException(
+            String.format(
+                "Wrong id of the item. Cart doesn't have order item with id %d",
+                orderItemDto.getId()));
+      }
+
+      orderItemDto.setProductId(cart.getItems().get(orderItemDto.getId()).getProductId());
     }
   }
 }

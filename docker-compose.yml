@@ -4,10 +4,24 @@ services:
     restart: always
     ports:
       - "6379:6379"
-    environment:
-      - MYSQL_ROOT_PASSWORD=root
     volumes:
       - redis-data:/data
+  postgres-db:
+    image: postgres:16.2
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_DB=shop_dev
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=pwd
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./sql/scripts/01-creation.sql:/docker-entrypoint-initdb.d/01-creation.sql
+      - ./sql/scripts/02-grant-privileges.sql:/docker-entrypoint-initdb.d/02-grant-privileges.sql
+      - ./sql/scripts/03-init.sql:/docker-entrypoint-initdb.d/03-init.sql
 
 volumes:
   redis-data:
+  postgres-data:
+    driver: local

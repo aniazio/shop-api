@@ -1,6 +1,8 @@
 package com.griddynamics.shopapi.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.PositiveOrZero;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 import lombok.Getter;
@@ -21,7 +23,8 @@ public class OrderDetails {
   private Long id;
 
   @Column(nullable = false)
-  private double total = 0;
+  @PositiveOrZero
+  private BigDecimal total = BigDecimal.valueOf(0);
 
   @Column(nullable = false)
   @CreationTimestamp
@@ -32,9 +35,11 @@ public class OrderDetails {
   private OrderStatus status;
 
   @ManyToOne(optional = false)
-  private Client client;
+  @ToString.Exclude
+  private User user;
 
   @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+  @OrderBy("addedAt ASC")
   private List<OrderItem> items = new LinkedList<>();
 
   public void addProduct(Product product, int quantity) {
@@ -52,21 +57,19 @@ public class OrderDetails {
 
       items.add(item);
     }
-
-    total += quantity * product.getPrice();
+    total = total.add(product.getPrice().multiply(BigDecimal.valueOf(quantity)));
   }
 
-  public int updateAndGetDifferenceInProductAmount(long productId, int newAmount) {
+  public void updateProductAmount(long productId, int newAmount) {
     Optional<OrderItem> itemOp =
         items.stream().filter(item -> item.getProductId() == productId).findAny();
     if (itemOp.isEmpty()) {
-      return newAmount;
+      return;
     }
     OrderItem item = itemOp.get();
     int diff = newAmount - item.getQuantity();
-    total += diff * item.getPrice();
+    total = total.add(item.getPrice().multiply(BigDecimal.valueOf(diff)));
     item.setQuantity(newAmount);
-    return diff;
   }
 
   public void removeProduct(Product product) {
@@ -80,23 +83,23 @@ public class OrderDetails {
       return null;
     }
     OrderItem item = itemOp.get();
-    total -= item.getQuantity() * item.getPrice();
+    total = total.subtract(item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
     items.remove(item);
     return item;
   }
 
   public void clearOrder() {
     items.clear();
-    total = 0;
+    total = BigDecimal.valueOf(0);
   }
 
-  public void setClient(Client client) {
-    if (this.client != null) {
-      this.client.removeOrder(this);
+  public void setUser(User user) {
+    if (this.user != null) {
+      this.user.removeOrder(this);
     }
 
-    client.addOrder(this);
-    this.client = client;
+    user.addOrder(this);
+    this.user = user;
   }
 
   @Override
@@ -107,13 +110,13 @@ public class OrderDetails {
     OrderDetails that = (OrderDetails) o;
 
     if (!Objects.equals(createdAt, that.createdAt)) return false;
-    return Objects.equals(client, that.client);
+    return Objects.equals(user, that.user);
   }
 
   @Override
   public int hashCode() {
     int result = createdAt != null ? createdAt.hashCode() : 0;
-    result = 31 * result + (client != null ? client.hashCode() : 0);
+    result = 31 * result + (user != null ? user.hashCode() : 0);
     return result;
   }
 }

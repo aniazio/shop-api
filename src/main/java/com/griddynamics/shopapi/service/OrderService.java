@@ -1,13 +1,13 @@
 package com.griddynamics.shopapi.service;
 
 import com.griddynamics.shopapi.dto.OrderDto;
-import com.griddynamics.shopapi.dto.OrderListDto;
+import java.util.List;
 
 public interface OrderService {
 
-  OrderListDto getAllOrderFor(long clientId);
+  List<OrderDto> getAllOrderForUser(long userId);
 
-  OrderDto getOrderFor(long userId, long orderId);
+  OrderDto getOrderForUser(long userId, long orderId);
 
-  void deleteOrder(long userId, long orderId);
+  void cancelOrder(long userId, long orderId);
 }

@@ -13,16 +13,19 @@ import lombok.Setter;
 @NoArgsConstructor
 public class ResetToken {
 
+  public static final int EXPIRATION_TIME_FOR_RESET_TOKENS = 1;
+
   @Id private Long id;
 
   @OneToOne(optional = false, fetch = FetchType.LAZY)
   @MapsId
-  private Client client;
+  private User user;
 
   private String token = UUID.randomUUID().toString();
-  private LocalDateTime expiration_date = LocalDateTime.now().plusMinutes(1);
+  private LocalDateTime expirationTime =
+      LocalDateTime.now().plusMinutes(EXPIRATION_TIME_FOR_RESET_TOKENS);
 
   public boolean isExpired() {
-    return LocalDateTime.now().isAfter(expiration_date);
+    return LocalDateTime.now().isAfter(expirationTime);
   }
 }

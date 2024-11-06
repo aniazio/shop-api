@@ -2,6 +2,7 @@ package com.griddynamics.shopapi.model;
 
 import com.griddynamics.shopapi.util.Encoder;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -15,24 +16,25 @@ import lombok.ToString;
 @Setter
 @NoArgsConstructor
 @ToString
-public class Client {
+@Table(name = "UserDetails")
+public class User {
   @Id
-  @SequenceGenerator(name = "seqClient", sequenceName = "CLIENTS_SEQ", allocationSize = 1)
-  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "seqClient")
+  @SequenceGenerator(name = "seqUser", sequenceName = "USERS_SEQ", allocationSize = 1)
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "seqUser")
   private Long id;
 
   @Column(nullable = false)
+  @Email
   private String email;
 
-  @Column(nullable = false)
-  private String password;
+  @Column(nullable = false, name = "password")
+  private String encodedPassword;
 
-
-  @OneToMany(mappedBy = "client", fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
   private Set<OrderDetails> orders = new HashSet<>();
 
   public void encodeAndSetPassword(String password) {
-    this.password = Encoder.encode(password);
+    this.encodedPassword = Encoder.encode(password);
   }
 
   public void addOrder(OrderDetails order) {
@@ -48,7 +50,7 @@ public class Client {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    Client that = (Client) o;
+    User that = (User) o;
 
     return Objects.equals(email, that.email);
   }

@@ -9,16 +9,16 @@ import org.springframework.data.repository.CrudRepository;
 public interface OrderRepository extends CrudRepository<OrderDetails, Long> {
 
   @Query(
-      value = "SELECT o.client_id FROM Order_Details o WHERE o.status='CART' AND o.id=?1",
+      value = "SELECT o.user_id FROM Order_Details o WHERE o.status='CART' AND o.id=?1",
       nativeQuery = true)
-  Optional<Long> findClientIdByIdAndStatusIsCart(long id);
+  Optional<Long> findUserIdByIdAndStatusIsCart(long id);
 
   @Query(
-      value = "SELECT * FROM Order_Details o WHERE o.status='CART' AND o.client_id=?1",
+      value = "SELECT * FROM Order_Details o WHERE o.status='CART' AND o.user_id=?1",
       nativeQuery = true)
-  Optional<OrderDetails> findCartByClientId(long clientId);
+  Optional<OrderDetails> findCartByUserId(long userId);
 
-  Set<OrderDetails> findByClientId(long clientId);
+  Set<OrderDetails> findByUserId(long userId);
 
-  Optional<OrderDetails> findByIdAndClientId(long id, long clientId);
+  Optional<OrderDetails> findByIdAndUserId(long id, long userId);
 }

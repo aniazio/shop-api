@@ -1,11 +1,12 @@
 package com.griddynamics.shopapi.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Positive;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Objects;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 
 @Entity
 @Getter
@@ -22,10 +23,15 @@ public class OrderItem {
   private OrderItemPrimaryKey id = new OrderItemPrimaryKey();
 
   @Column(nullable = false)
+  @Positive
   private int quantity;
 
   @Column(nullable = false)
-  private double price;
+  private BigDecimal price;
+
+  @Column(nullable = false)
+  @CreationTimestamp
+  private LocalDateTime addedAt;
 
   @MapsId("orderId")
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -40,6 +46,7 @@ public class OrderItem {
   public void setProduct(Product product) {
     this.id.setProductId(product.getId());
   }
+
 
   @Override
   public boolean equals(Object o) {

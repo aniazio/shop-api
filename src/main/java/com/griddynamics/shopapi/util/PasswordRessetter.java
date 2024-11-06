@@ -4,5 +4,5 @@ import com.griddynamics.shopapi.model.ResetToken;
 
 public interface PasswordRessetter {
 
-  void sendEmailWithToken(String email, ResetToken savedToken);
+  String sendEmailWithToken(String email, ResetToken savedToken);
 }
