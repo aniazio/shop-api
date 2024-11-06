@@ -24,7 +24,7 @@ public class GlobalControllerAdvice {
 
     ProblemDetail problemDetail =
         ProblemDetail.forStatusAndDetail(
-            HttpStatus.NOT_FOUND, "Your cart is not found. Please try to log in again");
+            HttpStatus.NOT_FOUND, "Your cart is not found. Please, try to log in again");
 
     problemDetail.setTitle("Resource not found");
     return problemDetail;

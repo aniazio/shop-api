@@ -44,7 +44,7 @@ public class OrderController {
   }
 
   @DeleteMapping("/{orderId}")
-  public void deleteOrder(@PathVariable long orderId, HttpSession session) {
+  public void cancelOrder(@PathVariable long orderId, HttpSession session) {
     long userId = getUserId(session);
     orderService.cancelOrder(userId, orderId);
   }

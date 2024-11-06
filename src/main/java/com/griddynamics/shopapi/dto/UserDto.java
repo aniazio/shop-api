@@ -1,6 +1,7 @@
 package com.griddynamics.shopapi.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.griddynamics.shopapi.model.User;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
@@ -23,6 +24,7 @@ public class UserDto {
       regexp = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*()])[A-Za-z\\d!@#$%^&*()]{5,}$",
       message =
           "Password must be at least 5 characters long, with at least one letter, one digit, and one special character")
+  @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
   private String password;
 
   public UserDto(User user) {

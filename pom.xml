@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.griddynamics</groupId>
 	<artifactId>shop-api</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+    <version>1.0.0</version>
 	<name>shop-api</name>
 	<description>Web Development with Java and Spring - final project</description>
 
@@ -62,7 +62,8 @@
 			<artifactId>h2</artifactId>
 			<scope>runtime</scope>
 		</dependency>
-		<dependency>
+
+        <dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>

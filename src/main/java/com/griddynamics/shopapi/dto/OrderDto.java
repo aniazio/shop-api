@@ -34,6 +34,7 @@ public class OrderDto extends RepresentationModel<OrderDto> {
   @Positive(message = "Wrong id format")
   private final long userId;
 
+  @JsonProperty(access = JsonProperty.Access.READ_ONLY)
   private final List<OrderItemDto> items = new ArrayList<>();
 
   public OrderDto(OrderDetails orderDetails) {

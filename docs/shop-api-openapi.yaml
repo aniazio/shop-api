@@ -1,0 +1,490 @@
+---
+openapi: 3.0.0
+info:
+  title: shop-api
+  description: The final project for "Web Development with Java and Spring" course
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+paths:
+  /:
+    get:
+      tags:
+        - Home
+      summary: navigation page
+      operationId: getHome
+      responses:
+        "200":
+          description: Ok.
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /cart:
+    get:
+      tags:
+        - Cart
+      summary: get cart for the session
+      operationId: getCart
+      parameters:
+        - $ref: '#/components/parameters/SessionHeader'
+      responses:
+        "200":
+          description: Ok. Cart found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartDto'
+        "401":
+          description: Unauthorized. User not logged.
+        "403":
+          description: Forbidden. User doesn't have a cart.
+        "404":
+          description: Not found. Cart not found. Try to log again.
+    delete:
+      tags:
+        - Cart
+      summary: clear cart
+      operationId: clearCart
+      parameters:
+        - $ref: '#/components/parameters/SessionHeader'
+      responses:
+        "200":
+          description: Ok. Cart cleared.
+        "401":
+          description: Unauthorized. User not logged.
+        "403":
+          description: Forbidden. User doesn't have a cart.
+
+  /cart/items:
+    get:
+      tags:
+        - Cart
+      summary: get list of items from cart
+      operationId: getItems
+      parameters:
+        - $ref: '#/components/parameters/SessionHeader'
+      responses:
+        "200":
+          description: Ok. Items found.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrderItemDto'
+        "401":
+          description: Unauthorized. User not logged.
+        "403":
+          description: Forbidden. User doesn't have a cart.
+        "404":
+          description: Not found. Cart not found. Try to log again.
+    post:
+      tags:
+        - Cart
+      summary: add item to the cart
+      operationId: addItemToCart
+      parameters:
+        - $ref: '#/components/parameters/SessionHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderItemDto'
+        required: true
+      responses:
+        "201":
+          description: Created. Item added.
+        "401":
+          description: Unauthorized. User not logged.
+        "403":
+          description: Forbidden. User doesn't have a cart.
+        "404":
+          description: Not found. Cart or product not found. Try to log again.
+    patch:
+      tags:
+        - Cart
+      summary: update item amount
+      operationId: updateItemAmount
+      parameters:
+        - $ref: '#/components/parameters/SessionHeader'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderItemDto'
+        required: true
+      responses:
+        "200":
+          description: Ok Amount updated.
+        "400":
+          description: Bad Request. There is not enough units of the product available.
+        "401":
+          description: Unauthorized. User not logged.
+        "403":
+          description: Forbidden. User doesn't have a cart.
+        "404":
+          description: Not found. Cart or product not found. Try to log again.
+
+  /cart/items/{productId}:
+    delete:
+      tags:
+        - Cart
+      summary: delete product from the cart
+      operationId: deleteItemFromCart
+      parameters:
+        - $ref: '#/components/parameters/ProductIdPathParam'
+        - $ref: '#/components/parameters/SessionHeader'
+      responses:
+        "200":
+          description: Ok. Product deleted.
+        "401":
+          description: Unauthorized. User not logged.
+        "403":
+          description: Forbidden. User doesn't have a cart.
+        "404":
+          description: Not found. Cart or product not found.
+
+  /checkout:
+    put:
+      tags:
+        - Cart
+      summary: change cart to order
+      operationId: checkout
+      parameters:
+        - $ref: '#/components/parameters/SessionHeader'
+      responses:
+        "200":
+          description: Ok. Cart ordered.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDto'
+        "400":
+          description: Bad Request. There is not enough units of the product available or prices are incorrect.
+        "401":
+          description: Unauthorized. User not logged.
+        "403":
+          description: Forbidden. User doesn't have a cart.
+        "404":
+          description: Not found. Cart or product not found.
+
+  /orders:
+    get:
+      tags:
+        - Order
+      summary: get all orders for user
+      operationId: getAllOrders
+      parameters:
+        - $ref: '#/components/parameters/SessionHeader'
+      responses:
+        "200":
+          description: Ok. Orders found.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrderDto'
+        "401":
+          description: Unauthorized. User not logged.
+  /orders/{orderId}:
+    get:
+      tags:
+        - Order
+      summary: get the order
+      operationId: getOrder
+      parameters:
+        - $ref: "#/components/parameters/OrderIdPathParam"
+        - $ref: "#/components/parameters/SessionHeader"
+      responses:
+        "200":
+          description: Ok. Order found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDto'
+        "401":
+          description: Unauthorized. User not logged.
+        "404":
+          description: Not Found. Order not found.
+    delete:
+      tags:
+        - Order
+      summary: cancel the order
+      operationId: cancelOrder
+      parameters:
+        - $ref: "#/components/parameters/OrderIdPathParam"
+        - $ref: '#/components/parameters/SessionHeader'
+      responses:
+        "200":
+          description: Ok. Order canceled.
+        "400":
+          description: Bad Request. Wrong order status.
+        "401":
+          description: Unauthorized. User not logged.
+        "404":
+          description: Not found. Cart or product not found.
+
+  /products:
+    get:
+      tags:
+        - Product
+      summary: get all products
+      operationId: getAll
+      responses:
+        "200":
+          description: Ok. Products found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductDto'
+
+  /users/login:
+    put:
+      tags:
+        - User
+      summary: log in and assign cart
+      operationId: loginUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserDto'
+        required: true
+      responses:
+        "200":
+          description: Ok. User logged.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionInfo'
+        "403":
+          description: Forbidden. Wrong credentials.
+  /users/register:
+    post:
+      tags:
+        - User
+      summary: register new user
+      operationId: registerUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserDto'
+        required: true
+      responses:
+        "201":
+          description: Created. New user created.
+        "400":
+          description: Bad Request. Wrong input.
+        "409":
+          description: Conflict. User with this email already exists.
+  /users/reset:
+    patch:
+      tags:
+        - User
+      summary: reset password 1 step
+      operationId: requestPasswordReset
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserDto'
+        required: true
+      responses:
+        "200":
+          description: Ok. Reset token sent.
+        "404":
+          description: Not Found. User not found.
+    put:
+      tags:
+        - User
+      summary: reset password 2 step
+      operationId: resetPassword
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserDto'
+        required: true
+      responses:
+        "200":
+          description: Ok. New password saved.
+        "400":
+          description: Bad Request. Wrong input.
+        "404":
+          description: Not Found. User not found.
+
+
+components:
+  schemas:
+    ProductDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
+          example: 2411
+        title:
+          type: string
+          minLength: 3
+          maxLength: 200
+          example: "Nail gun"
+        available:
+          type: integer
+          format: int32
+          minimum: 0
+          example: 8
+        price:
+          type: number
+          format: double
+          multipleOf: 0.01
+          maximum: 999999.99
+          example: 23.95
+    SessionInfo:
+      type: object
+      readOnly: true
+      properties:
+        sessionId:
+          type: string
+          format: token
+          readOnly: true
+          example: "b58b270b-e7a4-441a-a912-a982885b3ee6"
+        userId:
+          type: integer
+          format: int64
+          readOnly: true
+          example: 4534
+        cartId:
+          type: integer
+          format: int64
+          readOnly: true
+          example: 1231
+    UserDto:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: "my@email.com"
+        password:
+          type: string
+          format: password
+          writeOnly: true
+          pattern: "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*()])[A-Za-z\\d!@#$%^&*()]{5,}$"
+          description: "Password must be at least 5 characters long, with at least one letter, one digit, and one special character"
+          example: "234dfs&"
+    OrderItemDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+          description: "Ordinal number in a cart"
+          example: 1
+        productId:
+          type: integer
+          format: int64
+          example: 2342
+        quantity:
+          type: integer
+          format: int32
+          minimum: 1
+          example: 10
+        price:
+          type: number
+          format: double
+          multipleOf: 0.01
+          readOnly: true
+          example: 23.95
+    OrderDto:
+      type: object
+      readOnly: true
+      properties:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
+          example: 234
+        total:
+          type: number
+          format: double
+          multipleOf: 0.01
+          minimum: 0
+          readOnly: true
+          example: 23.95
+        status:
+          type: string
+          readOnly: true
+          enum:
+            - ORDERED
+            - CANCELED
+            - CART
+        items:
+          type: array
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/OrderItemDto'
+    CartDto:
+      type: object
+      readOnly: true
+      properties:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
+          example: 234
+        total:
+          type: number
+          format: double
+          multipleOf: 0.01
+          minimum: 0
+          readOnly: true
+          example: 23.95
+        items:
+          type: array
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/OrderItemDto'
+  parameters:
+    ResetToken:
+      name: reset-token
+      in: query
+      description: token included in the second step of password resetting
+      required: true
+      schema:
+        type: string
+        format: token
+        example: "a0b7671d-8850-4638-a45e-d5e7f1aaf0b1"
+    OrderIdPathParam:
+      name: orderId
+      in: path
+      required: true
+      description: order id
+      schema:
+        type: integer
+        format: int64
+        example: 3453
+    ProductIdPathParam:
+      name: productId
+      in: path
+      required: true
+      description: product id
+      schema:
+        type: integer
+        format: int64
+        example: 564
+    SessionHeader:
+      name: X-Auth-token
+      in: header
+      required: true
+      description: session token
+      schema:
+        type: string
+        format: token
+        example: "a0b7671d-8850-4638-a45e-d5e7f1aaf0b1"

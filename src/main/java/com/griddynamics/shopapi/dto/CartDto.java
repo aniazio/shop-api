@@ -16,6 +16,7 @@ import lombok.ToString;
 @ToString
 public class CartDto {
 
+  @JsonProperty(access = JsonProperty.Access.READ_ONLY)
   @Positive(message = "Wrong id format")
   private final Long id;
 
@@ -23,6 +24,8 @@ public class CartDto {
   private final double total;
 
   @JsonIgnore private final Long userId;
+
+  @JsonProperty(access = JsonProperty.Access.READ_ONLY)
   private final List<OrderItemDto> items = new ArrayList<>();
 
   public CartDto(OrderDetails orderDetails) {
