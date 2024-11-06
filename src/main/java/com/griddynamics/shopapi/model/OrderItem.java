@@ -39,11 +39,18 @@ public class OrderItem {
   @ToString.Exclude
   private OrderDetails order;
 
+  @MapsId("productId")
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "product_id", referencedColumnName = "id")
+  @ToString.Exclude
+  private Product product;
+
   public long getProductId() {
     return id.getProductId();
   }
 
   public void setProduct(Product product) {
+    this.product = product;
     this.id.setProductId(product.getId());
   }
 

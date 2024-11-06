@@ -391,6 +391,10 @@ components:
           type: integer
           format: int64
           example: 2342
+        name:
+          type: string
+          readOnly: true
+          example: "Nail gun"
         quantity:
           type: integer
           format: int32
