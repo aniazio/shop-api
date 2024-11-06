@@ -16,7 +16,8 @@ To restart data in `dev` profile run `docker-compose down -v` and then `docker-c
 
 ### Documentation
 
-OpenAPI documentation can be found in `docs` folder, along with entity diagram and demo Postman collection.
+OpenAPI documentation can be found in the main folder. Entity diagram and demo Postman collection can be found in `docs`
+folder.
 
 ### Requirements
 
