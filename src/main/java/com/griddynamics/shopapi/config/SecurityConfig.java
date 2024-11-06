@@ -13,6 +13,7 @@ public class SecurityConfig {
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
     return http.authorizeHttpRequests(
             authorization ->
                 authorization
@@ -34,7 +35,9 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers(HttpMethod.PATCH, "/users/reset", "/cart/items")
                     .permitAll()
-                    .requestMatchers("/h2-console/**")
+                    .requestMatchers("/h2-console/**", "/error")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.OPTIONS, "/**")
                     .permitAll())
         .headers(h -> h.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
         .csrf(AbstractHttpConfigurer::disable)

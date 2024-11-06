@@ -4,6 +4,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 import com.griddynamics.shopapi.exception.*;
+import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 import jakarta.servlet.http.HttpSession;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
@@ -141,6 +142,18 @@ public class GlobalControllerAdvice {
         ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, message.toString());
 
     problemDetail.setTitle("Validation error");
+    return problemDetail;
+  }
+
+  @ExceptionHandler(RequestNotPermitted.class)
+  public ProblemDetail handleRateLimitExceedExceptions(Exception exception) {
+    log.error("-----Handling exception " + exception.getClass());
+    log.error(exception.getMessage());
+
+    ProblemDetail problemDetail =
+        ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, "Rate limit exceeded.");
+
+    problemDetail.setTitle("Rate limit exceeded");
     return problemDetail;
   }
 
