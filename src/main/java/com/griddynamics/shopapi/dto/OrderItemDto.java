@@ -19,6 +19,9 @@ public class OrderItemDto {
   private Integer id;
   private Long productId;
 
+  @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+  private String name;
+
   @Positive(message = "Quantity must be positive")
   private int quantity;
 
@@ -27,12 +30,14 @@ public class OrderItemDto {
 
   public OrderItemDto(OrderItem item) {
     productId = item.getProductId();
+    name = item.getProduct().getTitle();
     quantity = item.getQuantity();
     price = item.getPrice().doubleValue();
   }
 
   public OrderItemDto(OrderItem item, int index) {
     productId = item.getProductId();
+    name = item.getProduct().getTitle();
     quantity = item.getQuantity();
     price = item.getPrice().doubleValue();
     id = index;
