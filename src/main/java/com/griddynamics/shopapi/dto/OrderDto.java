@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.griddynamics.shopapi.controller.OrderController;
 import com.griddynamics.shopapi.model.OrderDetails;
+import com.griddynamics.shopapi.model.OrderItem;
 import com.griddynamics.shopapi.model.OrderStatus;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -42,7 +43,10 @@ public class OrderDto extends RepresentationModel<OrderDto> {
     total = orderDetails.getTotal().doubleValue();
     status = orderDetails.getStatus();
     userId = orderDetails.getUser().getId();
-    orderDetails.getItems().forEach(item -> items.add(new OrderItemDto(item)));
+    List<OrderItem> originalItems = orderDetails.getItems();
+    for (int i = 0; i < originalItems.size(); i++) {
+      items.add(new OrderItemDto(originalItems.get(i), i));
+    }
     this.add(linkTo(methodOn(OrderController.class).getOrder(id, null)).withSelfRel());
   }
 }
