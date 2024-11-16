@@ -1,7 +1,5 @@
 # Shop API
 
-## Final project for "Web Development with Java and Spring" course
-
 ### Starting the app
 
 Before starting the app you need to start docker containers with `docker-compose up -d` command run in the terminal.
