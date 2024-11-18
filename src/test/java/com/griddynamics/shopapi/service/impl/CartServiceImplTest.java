@@ -43,6 +43,7 @@ class CartServiceImplTest {
   long cartId = 342L;
   long productId = 897L;
   BigDecimal item1Price = BigDecimal.valueOf(10.03);
+  int firstItemQuantity = 10;
   OrderDetails cart;
   User user;
   double secondItemTotal;
@@ -65,7 +66,7 @@ class CartServiceImplTest {
     ArrayList<OrderItem> items = new ArrayList<>();
     OrderItem item1 = new OrderItem();
     item1.setOrder(cart);
-    item1.setQuantity(10);
+    item1.setQuantity(firstItemQuantity);
     item1.setPrice(item1Price);
     Product product = new Product();
     product.setId(productId);
@@ -302,7 +303,8 @@ class CartServiceImplTest {
     product.setId(productId);
     product.setPrice(item1Price);
 
-    when(productService.isAvailableProductWithAmount(itemDto.getProductId(), itemDto.getQuantity()))
+    when(productService.isAvailableProductWithAmount(
+            itemDto.getProductId(), itemDto.getQuantity() + firstItemQuantity))
         .thenReturn(true);
     when(orderRepository.findById(cartId)).thenReturn(Optional.of(cart));
     when(orderRepository.save(captor.capture())).thenReturn(null);

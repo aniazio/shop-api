@@ -42,9 +42,12 @@ public class OrderDetails {
   @OrderBy("addedAt ASC")
   private List<OrderItem> items = new LinkedList<>();
 
+  public Optional<OrderItem> getItemByProductId(long productId) {
+    return items.stream().filter(item -> item.getProductId() == productId).findAny();
+  }
+
   public void addProduct(Product product, int quantity) {
-    Optional<OrderItem> alreadyIn =
-        items.stream().filter(item -> item.getProductId() == product.getId()).findAny();
+    Optional<OrderItem> alreadyIn = getItemByProductId(product.getId());
     if (alreadyIn.isPresent()) {
       OrderItem item = alreadyIn.get();
       item.setQuantity(item.getQuantity() + quantity);

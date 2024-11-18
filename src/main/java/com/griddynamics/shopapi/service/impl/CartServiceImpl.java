@@ -44,17 +44,17 @@ public class CartServiceImpl implements CartService {
   @Override
   public void updateItemAmount(OrderItemDto orderItemDto, SessionInfo sessionInfo) {
     sessionService.validateSessionInfo(sessionInfo);
-    if (!productService.isAvailableProductWithAmount(
-        orderItemDto.getProductId(), orderItemDto.getQuantity())) {
+    int newAmount = orderItemDto.getQuantity();
+    if (!productService.isAvailableProductWithAmount(orderItemDto.getProductId(), newAmount)) {
       throw new ProductNotAvailableException(
           String.format(
               "There is no %1$d units of product with id %2$d",
-              orderItemDto.getQuantity(), orderItemDto.getProductId()));
+              newAmount, orderItemDto.getProductId()));
     }
 
     OrderDetails cart = getCartFromDb(sessionInfo.getCartId());
     orderItemDto = fillOrderItemInfo(orderItemDto, cart);
-    cart.updateProductAmount(orderItemDto.getProductId(), orderItemDto.getQuantity());
+    cart.updateProductAmount(orderItemDto.getProductId(), newAmount);
 
     orderRepository.save(cart);
   }
@@ -102,18 +102,21 @@ public class CartServiceImpl implements CartService {
   @Override
   public void addItem(OrderItemDto orderItemDto, SessionInfo sessionInfo) {
     sessionService.validateSessionInfo(sessionInfo);
-    if (!productService.isAvailableProductWithAmount(
-        orderItemDto.getProductId(), orderItemDto.getQuantity())) {
+    int amountAdded = orderItemDto.getQuantity();
+
+    OrderDetails cart = getCartFromDb(sessionInfo.getCartId());
+    orderItemDto = fillOrderItemInfo(orderItemDto, cart);
+    Optional<OrderItem> itemFromCartOp = cart.getItemByProductId(orderItemDto.getProductId());
+    int newAmount = amountAdded + itemFromCartOp.map(OrderItem::getQuantity).orElse(0);
+
+    if (!productService.isAvailableProductWithAmount(orderItemDto.getProductId(), newAmount)) {
       throw new ProductNotAvailableException(
           String.format(
               "There is no %1$d units of product with id %2$d",
               orderItemDto.getQuantity(), orderItemDto.getProductId()));
     }
 
-    OrderDetails cart = getCartFromDb(sessionInfo.getCartId());
-    orderItemDto = fillOrderItemInfo(orderItemDto, cart);
-    cart.addProduct(
-        productService.getProductById(orderItemDto.getProductId()), orderItemDto.getQuantity());
+    cart.addProduct(productService.getProductById(orderItemDto.getProductId()), amountAdded);
 
     orderRepository.save(cart);
   }
