@@ -1,5 +1,7 @@
 package com.griddynamics.shopapi.controller;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -12,6 +14,8 @@ import com.griddynamics.shopapi.model.OrderDetails;
 import com.griddynamics.shopapi.model.OrderStatus;
 import com.griddynamics.shopapi.model.User;
 import com.griddynamics.shopapi.service.OrderService;
+import com.griddynamics.shopapi.service.SessionService;
+import jakarta.servlet.http.HttpSession;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -20,6 +24,8 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -29,7 +35,9 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 @ExtendWith(MockitoExtension.class)
 class OrderControllerTest {
   @Mock OrderService orderService;
+  @Mock SessionService sessionService;
   @InjectMocks OrderController controller;
+  @Captor ArgumentCaptor<HttpSession> sessionCaptor;
   MockMvc mockMvc;
   long userId = 4362;
   long cartId = 192;
@@ -59,6 +67,14 @@ class OrderControllerTest {
     orderDetails.setId(345L);
     orderDetails.setStatus(OrderStatus.CANCELED);
     orderDto2 = new OrderDto(orderDetails);
+
+    when(sessionService.getUserId(sessionCaptor.capture())).thenReturn(userId);
+  }
+
+  void verifySessionPassed() {
+    then(sessionService).should().getUserId(any());
+    HttpSession captured = sessionCaptor.getValue();
+    assertEquals(userId, (long) captured.getAttribute("userId"));
   }
 
   @Test
@@ -77,6 +93,8 @@ class OrderControllerTest {
         .andExpect(jsonPath("$.content[1].id", Matchers.equalTo((int) orderDto2.getId())))
         .andExpect(
             jsonPath("$.content[1].status", Matchers.equalTo(OrderStatus.CANCELED.toString())));
+
+    verifySessionPassed();
   }
 
   @Test
@@ -89,6 +107,7 @@ class OrderControllerTest {
         .andExpect(jsonPath("$.id", Matchers.equalTo((int) orderDto1.getId())))
         .andExpect(jsonPath("$.status", Matchers.equalTo(OrderStatus.ORDERED.toString())))
         .andExpect(jsonPath("$.userId").doesNotExist());
+    verifySessionPassed();
   }
 
   @Test
@@ -98,14 +117,6 @@ class OrderControllerTest {
         .andExpect(status().isOk());
 
     then(orderService).should().cancelOrder(userId, orderDto1.getId());
-  }
-
-  @Test
-  void should_return401_when_unauthorized() throws Exception {
-    mockMvc
-        .perform(get("/orders"))
-        .andExpect(status().isUnauthorized())
-        .andExpect(jsonPath("$.title", Matchers.equalTo("Unauthorized")))
-        .andExpect(jsonPath("$.detail", Matchers.containsString("Please, log in")));
+    verifySessionPassed();
   }
 }

@@ -16,7 +16,7 @@ import lombok.ToString;
 @ValidOrderItemDto
 public class OrderItemDto {
 
-  private Integer id;
+  private Integer ordinal;
   private Long productId;
 
   @JsonProperty(access = JsonProperty.Access.READ_ONLY)
@@ -35,11 +35,19 @@ public class OrderItemDto {
     price = item.getPrice().doubleValue();
   }
 
-  public OrderItemDto(OrderItem item, int index) {
+  public OrderItemDto(OrderItemDto orderItemDto) {
+    this.ordinal = orderItemDto.getOrdinal();
+    this.productId = orderItemDto.getProductId();
+    this.name = orderItemDto.getName();
+    this.quantity = orderItemDto.getQuantity();
+    this.price = orderItemDto.getPrice();
+  }
+
+  public OrderItemDto(OrderItem item, int ordinal) {
     productId = item.getProductId();
     name = item.getProduct().getTitle();
     quantity = item.getQuantity();
     price = item.getPrice().doubleValue();
-    id = index;
+    this.ordinal = ordinal;
   }
 }

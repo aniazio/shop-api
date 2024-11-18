@@ -4,6 +4,7 @@ import com.griddynamics.shopapi.util.Encoder;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import lombok.Getter;
@@ -43,6 +44,14 @@ public class User {
 
   public void removeOrder(OrderDetails order) {
     orders.remove(order);
+  }
+
+  public void setEmail(String email) {
+    this.email = email.toLowerCase(Locale.ROOT);
+  }
+
+  public String getEmail() {
+    return email.toLowerCase(Locale.ROOT);
   }
 
   @Override

@@ -13,19 +13,16 @@ import com.griddynamics.shopapi.service.ProductService;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
 import java.util.*;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
   private final ProductRepository productRepository;
   private final OrderRepository orderRepository;
-
-  public ProductServiceImpl(ProductRepository productRepository, OrderRepository orderRepository) {
-    this.productRepository = productRepository;
-    this.orderRepository = orderRepository;
-  }
 
   @Override
   public List<ProductDto> getAll() {

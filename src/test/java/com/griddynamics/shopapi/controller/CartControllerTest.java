@@ -1,5 +1,6 @@
 package com.griddynamics.shopapi.controller;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.then;
@@ -17,6 +18,8 @@ import com.griddynamics.shopapi.exception.ForbiddenResourcesException;
 import com.griddynamics.shopapi.exception.UserNotFoundException;
 import com.griddynamics.shopapi.model.*;
 import com.griddynamics.shopapi.service.CartService;
+import com.griddynamics.shopapi.service.impl.SessionServiceImpl;
+import jakarta.servlet.http.HttpSession;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -26,8 +29,7 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -37,7 +39,9 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 class CartControllerTest {
 
   @Mock CartService cartService;
+  @Mock SessionServiceImpl sessionService;
   @InjectMocks CartController controller;
+  @Captor ArgumentCaptor<HttpSession> sessionCaptor;
   MockMvc mockMvc;
   CartDto cart;
   OrderItem item;
@@ -78,8 +82,17 @@ class CartControllerTest {
     sessionAttrs.put("cartId", cartId);
   }
 
+  void verifySessionAttributes() {
+    then(sessionService).should().authorizeAndGetSessionInfo(any());
+    HttpSession captured = sessionCaptor.getValue();
+    assertEquals(userId, (long) captured.getAttribute("userId"));
+    assertEquals(cartId, (long) captured.getAttribute("cartId"));
+  }
+
   @Test
   void should_return200_when_getCart() throws Exception {
+    when(sessionService.authorizeAndGetSessionInfo(sessionCaptor.capture()))
+        .thenReturn(new SessionInfo(userId, cartId));
     when(cartService.getCartFor(any())).thenReturn(cart);
 
     mockMvc
@@ -89,10 +102,14 @@ class CartControllerTest {
         .andExpect(jsonPath("$.total", Matchers.equalTo(cart.getTotal())))
         .andExpect(jsonPath("$.items", Matchers.hasSize(1)))
         .andExpect(jsonPath("$.items[0].productId", Matchers.equalTo((int) item.getProductId())));
+
+    verifySessionAttributes();
   }
 
   @Test
   void should_return200_when_getItems() throws Exception {
+    when(sessionService.authorizeAndGetSessionInfo(sessionCaptor.capture()))
+        .thenReturn(new SessionInfo(userId, cartId));
     when(cartService.getCartFor(any())).thenReturn(cart);
 
     mockMvc
@@ -101,10 +118,14 @@ class CartControllerTest {
         .andExpect(jsonPath("$.content", Matchers.hasSize(1)))
         .andExpect(jsonPath("$.content[0].productId", Matchers.equalTo((int) item.getProductId())))
         .andExpect(jsonPath("$.content[0].price", Matchers.equalTo(item.getPrice().doubleValue())));
+
+    verifySessionAttributes();
   }
 
   @Test
   void should_return200_when_deleteItemFromCart() throws Exception {
+    when(sessionService.authorizeAndGetSessionInfo(sessionCaptor.capture()))
+        .thenReturn(new SessionInfo(userId, cartId));
     long productId = 33562L;
 
     mockMvc
@@ -112,10 +133,13 @@ class CartControllerTest {
         .andExpect(status().isOk());
 
     then(cartService).should().deleteItemFromCart(eq(productId), any(SessionInfo.class));
+    then(sessionService).should().authorizeAndGetSessionInfo(any());
   }
 
   @Test
   void should_return201_when_addItemToCart_productId() throws Exception {
+    when(sessionService.authorizeAndGetSessionInfo(sessionCaptor.capture()))
+        .thenReturn(new SessionInfo(userId, cartId));
     OrderItemDto requestDto = new OrderItemDto();
     requestDto.setProductId(1034L);
     requestDto.setQuantity(10);
@@ -129,13 +153,16 @@ class CartControllerTest {
         .andExpect(status().isCreated())
         .andExpect(header().exists("Location"));
 
+    verifySessionAttributes();
     then(cartService).should().addItem(any(OrderItemDto.class), any(SessionInfo.class));
   }
 
   @Test
   void should_return201_when_addItemToCart_id() throws Exception {
+    when(sessionService.authorizeAndGetSessionInfo(sessionCaptor.capture()))
+        .thenReturn(new SessionInfo(userId, cartId));
     OrderItemDto requestDto = new OrderItemDto();
-    requestDto.setId(1);
+    requestDto.setOrdinal(1);
     requestDto.setQuantity(4);
 
     mockMvc
@@ -147,6 +174,7 @@ class CartControllerTest {
         .andExpect(status().isCreated())
         .andExpect(header().exists("Location"));
 
+    verifySessionAttributes();
     then(cartService).should().addItem(any(OrderItemDto.class), any(SessionInfo.class));
   }
 
@@ -170,6 +198,8 @@ class CartControllerTest {
 
   @Test
   void should_return200_when_updateItemAmount_productId() throws Exception {
+    when(sessionService.authorizeAndGetSessionInfo(sessionCaptor.capture()))
+        .thenReturn(new SessionInfo(userId, cartId));
     OrderItemDto requestDto = new OrderItemDto();
     requestDto.setProductId(114L);
     requestDto.setQuantity(10);
@@ -183,13 +213,16 @@ class CartControllerTest {
         .andExpect(status().isOk())
         .andExpect(header().exists("Location"));
 
+    verifySessionAttributes();
     then(cartService).should().updateItemAmount(any(OrderItemDto.class), any(SessionInfo.class));
   }
 
   @Test
   void should_return200_when_updateItemAmount_id() throws Exception {
+    when(sessionService.authorizeAndGetSessionInfo(sessionCaptor.capture()))
+        .thenReturn(new SessionInfo(userId, cartId));
     OrderItemDto requestDto = new OrderItemDto();
-    requestDto.setId(1);
+    requestDto.setOrdinal(1);
     requestDto.setQuantity(10);
 
     mockMvc
@@ -201,13 +234,14 @@ class CartControllerTest {
         .andExpect(status().isOk())
         .andExpect(header().exists("Location"));
 
+    verifySessionAttributes();
     then(cartService).should().updateItemAmount(any(OrderItemDto.class), any(SessionInfo.class));
   }
 
   @Test
   void should_return400_when_updateItemAmount_withoutQuantity() throws Exception {
     OrderItemDto requestDto = new OrderItemDto();
-    requestDto.setId(3);
+    requestDto.setOrdinal(3);
 
     mockMvc
         .perform(
@@ -224,6 +258,8 @@ class CartControllerTest {
 
   @Test
   void should_return200_when_checkout() throws Exception {
+    when(sessionService.authorizeAndGetSessionInfo(sessionCaptor.capture()))
+        .thenReturn(new SessionInfo(userId, cartId));
     OrderDetails returned = new OrderDetails();
     returned.setId(191L);
     returned.setStatus(OrderStatus.ORDERED);
@@ -239,30 +275,44 @@ class CartControllerTest {
         .andExpect(jsonPath("$.userId").doesNotExist())
         .andExpect(jsonPath("$.status", Matchers.equalTo(OrderStatus.ORDERED.toString())))
         .andExpect(jsonPath("$.id", Matchers.equalTo(returned.getId().intValue())));
+
+    then(sessionService).should().authorizeAndGetSessionInfo(any());
+    HttpSession captured = sessionCaptor.getValue();
+    assertEquals(userId, (long) captured.getAttribute("userId"));
   }
 
   @Test
   void should_return200_when_clearCart() throws Exception {
+    when(sessionService.authorizeAndGetSessionInfo(sessionCaptor.capture()))
+        .thenReturn(new SessionInfo(userId, cartId));
+
     mockMvc
         .perform(delete("/cart").sessionAttrs(sessionAttrs))
         .andExpect(status().isOk())
         .andExpect(header().exists("location"));
 
+    verifySessionAttributes();
     then(cartService).should().clearCart(any(SessionInfo.class));
   }
 
   @Test
   void should_return404_when_resourceNotFound() throws Exception {
+    when(sessionService.authorizeAndGetSessionInfo(sessionCaptor.capture()))
+        .thenReturn(new SessionInfo(userId, cartId));
     when(cartService.getCartFor(any())).thenThrow(UserNotFoundException.class);
 
     mockMvc
         .perform(get("/cart").sessionAttrs(sessionAttrs))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.title", Matchers.equalTo("Resource not found")));
+
+    verifySessionAttributes();
   }
 
   @Test
   void should_return404_when_cartNotFound() throws Exception {
+    when(sessionService.authorizeAndGetSessionInfo(sessionCaptor.capture()))
+        .thenReturn(new SessionInfo(userId, cartId));
     when(cartService.getCartFor(any())).thenThrow(CartNotFoundException.class);
 
     mockMvc
@@ -270,19 +320,14 @@ class CartControllerTest {
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.title", Matchers.equalTo("Resource not found")))
         .andExpect(jsonPath("$.detail", Matchers.containsString("try to log in again")));
-  }
 
-  @Test
-  void should_return401_when_unauthorized() throws Exception {
-    mockMvc
-        .perform(get("/cart"))
-        .andExpect(status().isUnauthorized())
-        .andExpect(jsonPath("$.title", Matchers.equalTo("Unauthorized")))
-        .andExpect(jsonPath("$.detail", Matchers.containsString("Please, log in")));
+    verifySessionAttributes();
   }
 
   @Test
   void should_return403_when_forbidden() throws Exception {
+    when(sessionService.authorizeAndGetSessionInfo(sessionCaptor.capture()))
+        .thenReturn(new SessionInfo(userId, cartId));
     when(cartService.getCartFor(any())).thenThrow(ForbiddenResourcesException.class);
 
     mockMvc
@@ -290,5 +335,7 @@ class CartControllerTest {
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.title", Matchers.equalTo("Forbidden resource")))
         .andExpect(jsonPath("$.detail", Matchers.containsString("forbidden resource")));
+
+    verifySessionAttributes();
   }
 }

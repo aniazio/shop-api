@@ -9,7 +9,7 @@ public class OrderItemDtoValidator implements ConstraintValidator<ValidOrderItem
   public boolean isValid(
       OrderItemDto orderItemDto, ConstraintValidatorContext constraintValidatorContext) {
     Long productId = orderItemDto.getProductId();
-    Integer id = orderItemDto.getId();
+    Integer id = orderItemDto.getOrdinal();
     if ((productId == null || productId < 0) && (id == null || id < 0)) {
       return false;
     }

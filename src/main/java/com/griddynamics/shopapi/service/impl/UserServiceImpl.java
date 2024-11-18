@@ -17,27 +17,18 @@ import com.griddynamics.shopapi.util.Encoder;
 import com.griddynamics.shopapi.util.PasswordRessetter;
 import jakarta.transaction.Transactional;
 import java.util.Optional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
   private final UserRepository userRepository;
   private final ResetTokenRepository tokenRepository;
   private final OrderRepository orderRepository;
   private final PasswordRessetter passwordRessetter;
-
-  public UserServiceImpl(
-      UserRepository userRepository,
-      ResetTokenRepository tokenRepository,
-      OrderRepository orderRepository,
-      PasswordRessetter passwordRessetter) {
-    this.userRepository = userRepository;
-    this.tokenRepository = tokenRepository;
-    this.orderRepository = orderRepository;
-    this.passwordRessetter = passwordRessetter;
-  }
 
   @Override
   public void register(UserDto userDto) {

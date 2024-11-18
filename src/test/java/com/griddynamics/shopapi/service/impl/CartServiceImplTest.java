@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -35,7 +34,8 @@ class CartServiceImplTest {
   @Mock OrderRepository orderRepository;
   @Mock UserRepository userRepository;
   @Mock ProductService productService;
-  @InjectMocks CartServiceImpl cartService;
+  SessionServiceImpl sessionService;
+  CartServiceImpl cartService;
   @Captor ArgumentCaptor<OrderDetails> captor;
   SessionInfo sessionInfo;
   String sessionId = "dsfs-12x-sfd-ads";
@@ -49,6 +49,9 @@ class CartServiceImplTest {
 
   @BeforeEach
   void setUp() {
+    sessionService = new SessionServiceImpl(orderRepository);
+    cartService =
+        new CartServiceImpl(orderRepository, userRepository, productService, sessionService);
     sessionInfo = new SessionInfo(sessionId, userId, cartId);
     cart = new OrderDetails();
     cart.setStatus(OrderStatus.CART);

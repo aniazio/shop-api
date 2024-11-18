@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.griddynamics.shopapi.model.User;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
+import java.util.Locale;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -27,7 +28,15 @@ public class UserDto {
 
   public UserDto(User user) {
     id = user.getId();
-    email = user.getEmail();
+    email = user.getEmail().toLowerCase(Locale.ROOT);
     password = null;
+  }
+
+  public void setEmail(String email) {
+    this.email = email.toLowerCase(Locale.ROOT);
+  }
+
+  public String getEmail() {
+    return email.toLowerCase(Locale.ROOT);
   }
 }
