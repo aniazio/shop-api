@@ -1,7 +1,7 @@
 package com.griddynamics.shopapi.service;
 
 import com.griddynamics.shopapi.dto.ProductDto;
-import com.griddynamics.shopapi.model.OrderDetails;
+import com.griddynamics.shopapi.model.Cart;
 import com.griddynamics.shopapi.model.OrderItem;
 import com.griddynamics.shopapi.model.Product;
 import java.util.List;
@@ -11,11 +11,11 @@ public interface ProductService {
 
   void addItemsToAvailable(List<OrderItem> items);
 
-  void validateAndUpdatePricesForOrder(OrderDetails order);
+  void validateAndUpdatePricesForCart(Cart cart);
 
   boolean isAvailableProductWithAmount(long productId, int amount);
 
   Product getProductById(long productId);
 
-  void updateAvailabilityForProductsIn(OrderDetails order);
+  void updateAvailabilityForProductsIn(Cart cart);
 }

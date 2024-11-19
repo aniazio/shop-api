@@ -3,22 +3,24 @@ package com.griddynamics.shopapi.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Objects;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
 @ToString
-public class OrderItem {
+public class CartItem {
 
   @EmbeddedId
   @AttributeOverrides({
     @AttributeOverride(name = "productId", column = @Column(name = "product_id")),
-    @AttributeOverride(name = "orderId", column = @Column(name = "order_id"))
+    @AttributeOverride(name = "cartId", column = @Column(name = "user_id"))
   })
-  private OrderItemPrimaryKey id = new OrderItemPrimaryKey();
+  private CartItemPrimaryKey id = new CartItemPrimaryKey();
 
   @Column(nullable = false)
   @Positive
@@ -27,23 +29,21 @@ public class OrderItem {
   @Column(nullable = false)
   private BigDecimal price;
 
-  @MapsId("orderId")
+  @Column(nullable = false)
+  @CreationTimestamp
+  private LocalDateTime addedAt;
+
+  @MapsId("cartId")
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "order_id", referencedColumnName = "id")
+  @JoinColumn(name = "user_id", referencedColumnName = "user_id")
   @ToString.Exclude
-  private OrderDetails order;
+  private Cart cart;
 
   @MapsId("productId")
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "product_id", referencedColumnName = "id")
   @ToString.Exclude
   private Product product;
-
-  public OrderItem(CartItem cartItem) {
-    this.setProduct(cartItem.getProduct());
-    price = cartItem.getPrice();
-    quantity = cartItem.getQuantity();
-  }
 
   public long getProductId() {
     return id.getProductId();
@@ -54,13 +54,12 @@ public class OrderItem {
     this.id.setProductId(product.getId());
   }
 
-
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    OrderItem orderItem = (OrderItem) o;
+    CartItem orderItem = (CartItem) o;
 
     return Objects.equals(id, orderItem.id);
   }

@@ -4,6 +4,7 @@ import com.griddynamics.shopapi.util.Encoder;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import lombok.Getter;
@@ -33,6 +34,13 @@ public class User {
   @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
   private Set<OrderDetails> orders = new HashSet<>();
 
+  @OneToOne(
+      mappedBy = "user",
+      fetch = FetchType.LAZY,
+      cascade = CascadeType.REMOVE,
+      orphanRemoval = true)
+  private Cart cart;
+
   public void encodeAndSetPassword(String password) {
     this.encodedPassword = Encoder.encode(password);
   }
@@ -43,6 +51,14 @@ public class User {
 
   public void removeOrder(OrderDetails order) {
     orders.remove(order);
+  }
+
+  public void setEmail(String email) {
+    this.email = email.toLowerCase(Locale.ROOT);
+  }
+
+  public String getEmail() {
+    return email.toLowerCase(Locale.ROOT);
   }
 
   @Override

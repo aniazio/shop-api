@@ -10,11 +10,8 @@ import com.griddynamics.shopapi.dto.UserDto;
 import com.griddynamics.shopapi.exception.ForbiddenResourcesException;
 import com.griddynamics.shopapi.exception.UserAlreadyExistsException;
 import com.griddynamics.shopapi.exception.WrongCredentialsException;
-import com.griddynamics.shopapi.model.OrderDetails;
-import com.griddynamics.shopapi.model.OrderStatus;
-import com.griddynamics.shopapi.model.ResetToken;
-import com.griddynamics.shopapi.model.User;
-import com.griddynamics.shopapi.repository.OrderRepository;
+import com.griddynamics.shopapi.model.*;
+import com.griddynamics.shopapi.repository.CartRepository;
 import com.griddynamics.shopapi.repository.ResetTokenRepository;
 import com.griddynamics.shopapi.repository.UserRepository;
 import com.griddynamics.shopapi.util.Encoder;
@@ -32,7 +29,7 @@ class UserServiceImplTest {
 
   @Mock UserRepository userRepository;
   @Mock ResetTokenRepository resetTokenRepository;
-  @Mock OrderRepository orderRepository;
+  @Mock CartRepository cartRepository;
   @Mock PasswordRessetter passwordRessetter;
   @InjectMocks UserServiceImpl userService;
   @Captor ArgumentCaptor<User> captor;
@@ -88,26 +85,24 @@ class UserServiceImplTest {
 
     assertThrows(WrongCredentialsException.class, () -> userService.loginAndReturnCart(userDto));
     then(userRepository).shouldHaveNoMoreInteractions();
-    then(orderRepository).shouldHaveNoInteractions();
+    then(cartRepository).shouldHaveNoInteractions();
   }
 
   @Test
   void should_loginAndReturnCart_when_cartInDb() {
-    OrderDetails cart = new OrderDetails();
+    Cart cart = new Cart();
     cart.setUser(user);
-    cart.setId(32525L);
 
     when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
-    when(orderRepository.findCartByUserId(userId)).thenReturn(Optional.of(cart));
+    when(cartRepository.findByUserId(userId)).thenReturn(Optional.of(cart));
 
-    ArgumentCaptor<OrderDetails> captorOrder = ArgumentCaptor.forClass(OrderDetails.class);
-    when(orderRepository.save(captorOrder.capture()))
+    ArgumentCaptor<Cart> captorOrder = ArgumentCaptor.forClass(Cart.class);
+    when(cartRepository.save(captorOrder.capture()))
         .thenAnswer(invocation -> invocation.getArguments()[0]);
 
     CartDto returned = userService.loginAndReturnCart(userDto);
 
-    then(orderRepository).should().delete(cart);
-    assertEquals(OrderStatus.CART, captorOrder.getValue().getStatus());
+    then(cartRepository).should().delete(cart);
     assertEquals(0, returned.getTotal());
     assertEquals(0, returned.getItems().size());
     assertEquals(userId, returned.getUserId());
@@ -116,16 +111,15 @@ class UserServiceImplTest {
   @Test
   void should_loginAndReturnCart_when_noCartInDb() {
     when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
-    when(orderRepository.findCartByUserId(userId)).thenReturn(Optional.empty());
+    when(cartRepository.findByUserId(userId)).thenReturn(Optional.empty());
 
-    ArgumentCaptor<OrderDetails> captorOrder = ArgumentCaptor.forClass(OrderDetails.class);
-    when(orderRepository.save(captorOrder.capture()))
+    ArgumentCaptor<Cart> captorOrder = ArgumentCaptor.forClass(Cart.class);
+    when(cartRepository.save(captorOrder.capture()))
         .thenAnswer(invocation -> invocation.getArguments()[0]);
 
     CartDto returned = userService.loginAndReturnCart(userDto);
 
-    then(orderRepository).shouldHaveNoMoreInteractions();
-    assertEquals(OrderStatus.CART, captorOrder.getValue().getStatus());
+    then(cartRepository).shouldHaveNoMoreInteractions();
     assertEquals(0, returned.getTotal());
     assertEquals(0, returned.getItems().size());
     assertEquals(userId, returned.getUserId());
