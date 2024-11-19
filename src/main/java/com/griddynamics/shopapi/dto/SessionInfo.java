@@ -18,11 +18,7 @@ public class SessionInfo {
   @JsonProperty(access = JsonProperty.Access.READ_ONLY)
   private Long userId;
 
-  @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-  private Long cartId;
-
-  public SessionInfo(Long userId, Long cartId) {
+  public SessionInfo(Long userId) {
     this.userId = userId;
-    this.cartId = cartId;
   }
 }

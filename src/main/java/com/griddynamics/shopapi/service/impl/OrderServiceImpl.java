@@ -28,7 +28,6 @@ public class OrderServiceImpl implements OrderService {
     Set<OrderDetails> orders = orderRepository.findByUserId(userId);
     List<OrderDto> ordersDto = new ArrayList<>();
     orders.stream()
-        .filter(order -> order.getStatus() != OrderStatus.CART)
         .forEach(order -> ordersDto.add(new OrderDto(order)));
     return ordersDto;
   }

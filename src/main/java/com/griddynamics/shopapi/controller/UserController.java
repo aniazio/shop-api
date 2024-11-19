@@ -31,10 +31,9 @@ public class UserController {
         userDto);
     CartDto cartDto = userService.loginAndReturnCart(userDto);
 
-    session.setAttribute("cartId", cartDto.getId());
     session.setAttribute("userId", cartDto.getUserId());
 
-    SessionInfo response = new SessionInfo(session.getId(), cartDto.getUserId(), cartDto.getId());
+    SessionInfo response = new SessionInfo(session.getId(), cartDto.getUserId());
     log.debug("UserController.loginUser: Response sent for session id {}", session.getId());
     return new ResponseEntity<>(response, HttpStatus.OK);
   }

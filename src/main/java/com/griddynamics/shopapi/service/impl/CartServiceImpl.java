@@ -1,11 +1,9 @@
 package com.griddynamics.shopapi.service.impl;
 
-import com.griddynamics.shopapi.dto.CartDto;
-import com.griddynamics.shopapi.dto.OrderDto;
-import com.griddynamics.shopapi.dto.OrderItemDto;
-import com.griddynamics.shopapi.dto.SessionInfo;
+import com.griddynamics.shopapi.dto.*;
 import com.griddynamics.shopapi.exception.*;
 import com.griddynamics.shopapi.model.*;
+import com.griddynamics.shopapi.repository.CartRepository;
 import com.griddynamics.shopapi.repository.OrderRepository;
 import com.griddynamics.shopapi.repository.UserRepository;
 import com.griddynamics.shopapi.service.CartService;
@@ -21,6 +19,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class CartServiceImpl implements CartService {
 
+  private final CartRepository cartRepository;
   private final OrderRepository orderRepository;
   private final UserRepository userRepository;
   private final ProductService productService;
@@ -29,96 +28,96 @@ public class CartServiceImpl implements CartService {
   @Override
   public CartDto getCartFor(SessionInfo sessionInfo) {
     sessionService.validateSessionInfo(sessionInfo);
-    OrderDetails cart = getCartFromDb(sessionInfo.getCartId());
+    Cart cart = getCartFromDb(sessionInfo.getUserId());
     return new CartDto(cart);
   }
 
   @Override
   public void deleteItemFromCart(long productId, SessionInfo sessionInfo) {
     sessionService.validateSessionInfo(sessionInfo);
-    OrderDetails cart = getCartFromDb(sessionInfo.getCartId());
+    Cart cart = getCartFromDb(sessionInfo.getUserId());
     cart.removeProduct(productId);
-    orderRepository.save(cart);
+    cartRepository.save(cart);
   }
 
   @Override
-  public void updateItemAmount(OrderItemDto orderItemDto, SessionInfo sessionInfo) {
+  public void updateItemAmount(CartItemDto cartItemDto, SessionInfo sessionInfo) {
     sessionService.validateSessionInfo(sessionInfo);
-    int newAmount = orderItemDto.getQuantity();
-    if (!productService.isAvailableProductWithAmount(orderItemDto.getProductId(), newAmount)) {
+    int newAmount = cartItemDto.getQuantity();
+    if (!productService.isAvailableProductWithAmount(cartItemDto.getProductId(), newAmount)) {
       throw new ProductNotAvailableException(
           String.format(
               "There is no %1$d units of product with id %2$d",
-              newAmount, orderItemDto.getProductId()));
+              newAmount, cartItemDto.getProductId()));
     }
 
-    OrderDetails cart = getCartFromDb(sessionInfo.getCartId());
-    orderItemDto = fillOrderItemInfo(orderItemDto, cart);
-    cart.updateProductAmount(orderItemDto.getProductId(), newAmount);
+    Cart cart = getCartFromDb(sessionInfo.getUserId());
+    cartItemDto = fillCartItemInfo(cartItemDto, cart);
+    cart.updateProductAmount(cartItemDto.getProductId(), newAmount);
 
-    orderRepository.save(cart);
+    cartRepository.save(cart);
   }
 
   @Override
   public OrderDto checkout(SessionInfo sessionInfo) {
     sessionService.validateSessionInfo(sessionInfo);
-    OrderDetails cart = getCartFromDb(sessionInfo.getCartId());
+    Cart cart = getCartFromDb(sessionInfo.getUserId());
     if (cart.getTotal().doubleValue() <= 0) {
       throw new ConversionException("Empty cart cannot be convert to ordered order");
     }
-    productService.validateAndUpdatePricesForOrder(cart);
+    productService.validateAndUpdatePricesForCart(cart);
     productService.updateAvailabilityForProductsIn(cart);
 
-    cart.setStatus(OrderStatus.ORDERED);
-    orderRepository.save(cart);
-    return new OrderDto(cart);
+    OrderDetails order = new OrderDetails(cart);
+    order.copyItemList(cart.getItems());
+    order.setStatus(OrderStatus.ORDERED);
+    OrderDetails savedOrder = orderRepository.save(order);
+    cartRepository.delete(cart);
+    return new OrderDto(savedOrder);
   }
 
   @Override
-  public long getIdOfNewCart(SessionInfo sessionInfo) {
+  public void createNewCart(SessionInfo sessionInfo) {
     User user = getClientFromDb(sessionInfo.getUserId());
-    Optional<OrderDetails> existingCart = orderRepository.findCartByUserId(user.getId());
+    Optional<Cart> existingCart = cartRepository.findByUserId(user.getId());
     if (existingCart.isPresent()) {
       throw new ForbiddenResourcesException(
           String.format("Cart for user with id %d already exists", user.getId()));
     }
 
-    OrderDetails newCart = new OrderDetails();
-    newCart.setStatus(OrderStatus.CART);
+    Cart newCart = new Cart();
     newCart.setUser(user);
-    OrderDetails savedCart = orderRepository.save(newCart);
-
-    return savedCart.getId();
+    cartRepository.save(newCart);
   }
 
   @Override
   public void clearCart(SessionInfo sessionInfo) {
     sessionService.validateSessionInfo(sessionInfo);
-    OrderDetails cart = getCartFromDb(sessionInfo.getCartId());
+    Cart cart = getCartFromDb(sessionInfo.getUserId());
     cart.clearOrder();
-    orderRepository.save(cart);
+    cartRepository.save(cart);
   }
 
   @Override
-  public void addItem(OrderItemDto orderItemDto, SessionInfo sessionInfo) {
+  public void addItem(CartItemDto cartItemDto, SessionInfo sessionInfo) {
     sessionService.validateSessionInfo(sessionInfo);
-    int amountAdded = orderItemDto.getQuantity();
+    int amountAdded = cartItemDto.getQuantity();
 
-    OrderDetails cart = getCartFromDb(sessionInfo.getCartId());
-    orderItemDto = fillOrderItemInfo(orderItemDto, cart);
-    Optional<OrderItem> itemFromCartOp = cart.getItemByProductId(orderItemDto.getProductId());
-    int newAmount = amountAdded + itemFromCartOp.map(OrderItem::getQuantity).orElse(0);
+    Cart cart = getCartFromDb(sessionInfo.getUserId());
+    cartItemDto = fillCartItemInfo(cartItemDto, cart);
+    Optional<CartItem> itemFromCartOp = cart.getItemByProductId(cartItemDto.getProductId());
+    int newAmount = amountAdded + itemFromCartOp.map(CartItem::getQuantity).orElse(0);
 
-    if (!productService.isAvailableProductWithAmount(orderItemDto.getProductId(), newAmount)) {
+    if (!productService.isAvailableProductWithAmount(cartItemDto.getProductId(), newAmount)) {
       throw new ProductNotAvailableException(
           String.format(
               "There is no %1$d units of product with id %2$d",
-              orderItemDto.getQuantity(), orderItemDto.getProductId()));
+              cartItemDto.getQuantity(), cartItemDto.getProductId()));
     }
 
-    cart.addProduct(productService.getProductById(orderItemDto.getProductId()), amountAdded);
+    cart.addProduct(productService.getProductById(cartItemDto.getProductId()), amountAdded);
 
-    orderRepository.save(cart);
+    cartRepository.save(cart);
   }
 
   private User getClientFromDb(long userId) {
@@ -129,26 +128,26 @@ public class CartServiceImpl implements CartService {
     return userFromDb.get();
   }
 
-  private OrderDetails getCartFromDb(long cartId) {
-    Optional<OrderDetails> cartFromDb = orderRepository.findById(cartId);
-    if (cartFromDb.isEmpty() || !OrderStatus.CART.equals(cartFromDb.get().getStatus())) {
-      throw new CartNotFoundException(String.format("Cart with id %d not found", cartId));
+  private Cart getCartFromDb(long userId) {
+    Optional<Cart> cartFromDb = cartRepository.findByUserId(userId);
+    if (cartFromDb.isEmpty()) {
+      throw new CartNotFoundException(String.format("Cart for user with id %d not found", userId));
     }
     return cartFromDb.get();
   }
 
-  private OrderItemDto fillOrderItemInfo(OrderItemDto orderItemDto, OrderDetails cart) {
-    OrderItemDto returnedOrderItem = new OrderItemDto(orderItemDto);
-    if (orderItemDto.getProductId() == null) {
+  private CartItemDto fillCartItemInfo(CartItemDto cartItemDto, Cart cart) {
+    CartItemDto returnedOrderItem = new CartItemDto(cartItemDto);
+    if (cartItemDto.getProductId() == null) {
 
-      if (orderItemDto.getOrdinal() >= cart.getItems().size()) {
+      if (cartItemDto.getOrdinal() >= cart.getItems().size()) {
         throw new ConversionException(
             String.format(
                 "Wrong ordinal of the item. Cart doesn't have order item with ordinal %d",
-                orderItemDto.getOrdinal()));
+                cartItemDto.getOrdinal()));
       }
 
-      OrderItem itemFromCart = cart.getItems().get(orderItemDto.getOrdinal());
+      CartItem itemFromCart = cart.getItems().get(cartItemDto.getOrdinal());
       long productIdFromCart = itemFromCart.getProductId();
       returnedOrderItem.setProductId(productIdFromCart);
     }

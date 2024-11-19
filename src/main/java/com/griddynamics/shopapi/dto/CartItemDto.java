@@ -2,7 +2,7 @@ package com.griddynamics.shopapi.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.griddynamics.shopapi.dto.validation.ValidCartItemDto;
-import com.griddynamics.shopapi.model.OrderItem;
+import com.griddynamics.shopapi.model.CartItem;
 import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,7 +14,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @ToString
 @ValidCartItemDto
-public class OrderItemDto {
+public class CartItemDto {
 
   private Integer ordinal;
   private Long productId;
@@ -28,22 +28,22 @@ public class OrderItemDto {
   @JsonProperty(access = JsonProperty.Access.READ_ONLY)
   private double price;
 
-  public OrderItemDto(OrderItem item) {
+  public CartItemDto(CartItem item) {
     productId = item.getProductId();
     name = item.getProduct().getTitle();
     quantity = item.getQuantity();
     price = item.getPrice().doubleValue();
   }
 
-  public OrderItemDto(OrderItemDto orderItemDto) {
-    this.ordinal = orderItemDto.getOrdinal();
-    this.productId = orderItemDto.getProductId();
-    this.name = orderItemDto.getName();
-    this.quantity = orderItemDto.getQuantity();
-    this.price = orderItemDto.getPrice();
+  public CartItemDto(CartItemDto cartItemDto) {
+    this.ordinal = cartItemDto.getOrdinal();
+    this.productId = cartItemDto.getProductId();
+    this.name = cartItemDto.getName();
+    this.quantity = cartItemDto.getQuantity();
+    this.price = cartItemDto.getPrice();
   }
 
-  public OrderItemDto(OrderItem item, int ordinal) {
+  public CartItemDto(CartItem item, int ordinal) {
     productId = item.getProductId();
     name = item.getProduct().getTitle();
     quantity = item.getQuantity();

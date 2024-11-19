@@ -1,6 +1,5 @@
 package com.griddynamics.shopapi.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.griddynamics.shopapi.model.User;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
@@ -15,7 +14,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @ToString
 public class UserDto {
-  @JsonIgnore private Long id;
+  private Long id;
 
   @Email(message = "Wrong email format")
   private String email;

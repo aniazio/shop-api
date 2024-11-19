@@ -1,10 +1,10 @@
 package com.griddynamics.shopapi.service.impl;
 
 import com.griddynamics.shopapi.dto.SessionInfo;
-import com.griddynamics.shopapi.exception.CartNotFoundException;
 import com.griddynamics.shopapi.exception.ForbiddenResourcesException;
 import com.griddynamics.shopapi.exception.UnauthorizedException;
-import com.griddynamics.shopapi.repository.OrderRepository;
+import com.griddynamics.shopapi.model.User;
+import com.griddynamics.shopapi.repository.UserRepository;
 import com.griddynamics.shopapi.service.SessionService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.transaction.Transactional;
@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 @Transactional
 public class SessionServiceImpl implements SessionService {
 
-  private final OrderRepository orderRepository;
+  private final UserRepository userRepository;
 
   @Override
   public SessionInfo authorizeAndGetSessionInfo(HttpSession session) {
@@ -25,11 +25,7 @@ public class SessionServiceImpl implements SessionService {
     if (sessionUserId == null) {
       throw new UnauthorizedException();
     }
-    Object sessionCartId = session.getAttribute("cartId");
-    if (sessionCartId == null) {
-      throw new ForbiddenResourcesException("cartId not found");
-    }
-    return new SessionInfo((long) sessionUserId, (long) sessionCartId);
+    return new SessionInfo((long) sessionUserId);
   }
 
   @Override
@@ -43,17 +39,10 @@ public class SessionServiceImpl implements SessionService {
 
   @Override
   public void validateSessionInfo(SessionInfo sessionInfo) {
-    Optional<Long> userIdFromCart =
-        orderRepository.findUserIdByIdAndStatusIsCart(sessionInfo.getCartId());
-    if (userIdFromCart.isEmpty()) {
-      throw new CartNotFoundException(
-          String.format("Cart with id %d not found", sessionInfo.getCartId()));
-    }
-    if (!userIdFromCart.get().equals(sessionInfo.getUserId())) {
+    Optional<User> user = userRepository.findById(sessionInfo.getUserId());
+    if (user.isEmpty()) {
       throw new ForbiddenResourcesException(
-          String.format(
-              "userId %1$d doesn't match info for cart on the id %2$d",
-              sessionInfo.getUserId(), sessionInfo.getCartId()));
+          String.format("User with id %d doesn't exist", sessionInfo.getUserId()));
     }
   }
 }

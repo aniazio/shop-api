@@ -34,6 +34,13 @@ public class User {
   @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
   private Set<OrderDetails> orders = new HashSet<>();
 
+  @OneToOne(
+      mappedBy = "user",
+      fetch = FetchType.LAZY,
+      cascade = CascadeType.REMOVE,
+      orphanRemoval = true)
+  private Cart cart;
+
   public void encodeAndSetPassword(String password) {
     this.encodedPassword = Encoder.encode(password);
   }

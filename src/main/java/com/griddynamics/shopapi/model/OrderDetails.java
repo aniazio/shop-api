@@ -39,19 +39,27 @@ public class OrderDetails {
   private User user;
 
   @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-  @OrderBy("addedAt ASC")
+  @OrderBy("product_id ASC")
   private List<OrderItem> items = new LinkedList<>();
 
-  public Optional<OrderItem> getItemByProductId(long productId) {
-    return items.stream().filter(item -> item.getProductId() == productId).findAny();
+  public OrderDetails(Cart cart) {
+    user = cart.getUser();
+    total = cart.getTotal();
+  }
+
+  public void copyItemList(List<CartItem> cartItems) {
+    items.addAll(
+        cartItems.stream()
+            .map(OrderItem::new)
+            .map(
+                item -> {
+                  item.setOrder(this);
+                  return item;
+                })
+            .toList());
   }
 
   public void addProduct(Product product, int quantity) {
-    Optional<OrderItem> alreadyIn = getItemByProductId(product.getId());
-    if (alreadyIn.isPresent()) {
-      OrderItem item = alreadyIn.get();
-      item.setQuantity(item.getQuantity() + quantity);
-    } else {
       OrderItem item = new OrderItem();
       item.setOrder(this);
       item.setProduct(product);
@@ -59,41 +67,8 @@ public class OrderDetails {
       item.setPrice(product.getPrice());
 
       items.add(item);
-    }
+
     total = total.add(product.getPrice().multiply(BigDecimal.valueOf(quantity)));
-  }
-
-  public void updateProductAmount(long productId, int newAmount) {
-    Optional<OrderItem> itemOp =
-        items.stream().filter(item -> item.getProductId() == productId).findAny();
-    if (itemOp.isEmpty()) {
-      return;
-    }
-    OrderItem item = itemOp.get();
-    int diff = newAmount - item.getQuantity();
-    total = total.add(item.getPrice().multiply(BigDecimal.valueOf(diff)));
-    item.setQuantity(newAmount);
-  }
-
-  public void removeProduct(Product product) {
-    removeProduct(product.getId());
-  }
-
-  public OrderItem removeProduct(long productId) {
-    Optional<OrderItem> itemOp =
-        items.stream().filter(item -> item.getProductId() == productId).findAny();
-    if (itemOp.isEmpty()) {
-      return null;
-    }
-    OrderItem item = itemOp.get();
-    total = total.subtract(item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
-    items.remove(item);
-    return item;
-  }
-
-  public void clearOrder() {
-    items.clear();
-    total = BigDecimal.valueOf(0);
   }
 
   public void setUser(User user) {

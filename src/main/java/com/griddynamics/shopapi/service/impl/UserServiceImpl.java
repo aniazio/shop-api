@@ -5,11 +5,8 @@ import com.griddynamics.shopapi.dto.UserDto;
 import com.griddynamics.shopapi.exception.ForbiddenResourcesException;
 import com.griddynamics.shopapi.exception.UserAlreadyExistsException;
 import com.griddynamics.shopapi.exception.WrongCredentialsException;
-import com.griddynamics.shopapi.model.OrderDetails;
-import com.griddynamics.shopapi.model.OrderStatus;
-import com.griddynamics.shopapi.model.ResetToken;
-import com.griddynamics.shopapi.model.User;
-import com.griddynamics.shopapi.repository.OrderRepository;
+import com.griddynamics.shopapi.model.*;
+import com.griddynamics.shopapi.repository.CartRepository;
 import com.griddynamics.shopapi.repository.ResetTokenRepository;
 import com.griddynamics.shopapi.repository.UserRepository;
 import com.griddynamics.shopapi.service.UserService;
@@ -27,7 +24,7 @@ public class UserServiceImpl implements UserService {
 
   private final UserRepository userRepository;
   private final ResetTokenRepository tokenRepository;
-  private final OrderRepository orderRepository;
+  private final CartRepository cartRepository;
   private final PasswordRessetter passwordRessetter;
 
   @Override
@@ -49,13 +46,12 @@ public class UserServiceImpl implements UserService {
     if (!Encoder.matches(userDto.getPassword(), user.getEncodedPassword())) {
       throw new WrongCredentialsException("Wrong credentials: " + userDto);
     }
-    Optional<OrderDetails> cartFromDb = orderRepository.findCartByUserId(user.getId());
-    cartFromDb.ifPresent(orderRepository::delete);
+    Optional<Cart> cartFromDb = cartRepository.findByUserId(user.getId());
+    cartFromDb.ifPresent(cartRepository::delete);
 
-    OrderDetails cart = new OrderDetails();
+    Cart cart = new Cart();
     cart.setUser(user);
-    cart.setStatus(OrderStatus.CART);
-    OrderDetails cartSaved = orderRepository.save(cart);
+    Cart cartSaved = cartRepository.save(cart);
     return new CartDto(cartSaved);
   }
 

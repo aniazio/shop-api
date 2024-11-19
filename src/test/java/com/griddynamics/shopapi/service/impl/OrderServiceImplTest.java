@@ -31,7 +31,7 @@ class OrderServiceImplTest {
   @Mock ProductService productService;
   @InjectMocks OrderServiceImpl orderService;
   User user;
-  OrderDetails order1, order2, cart;
+  OrderDetails order1, order2;
   long userId, order1Id, order2Id;
   Product product;
   int quantity;
@@ -59,15 +59,9 @@ class OrderServiceImplTest {
     order2.setCreatedAt(LocalDateTime.of(2021, 10, 10, 8, 11));
     order2.setUser(user);
 
-    cart = new OrderDetails();
-    cart.setStatus(OrderStatus.CART);
-    cart.setId(786L);
-    cart.setUser(user);
-
     Set<OrderDetails> orders = new HashSet<>();
     orders.add(order1);
     orders.add(order2);
-    orders.add(cart);
 
     user.setOrders(orders);
     userId = user.getId();
@@ -76,16 +70,12 @@ class OrderServiceImplTest {
   }
 
   @Test
-  void should_getAllOrderForUser_withoutCart() {
+  void should_getAllOrderForUser() {
     when(orderRepository.findByUserId(userId)).thenReturn(user.getOrders());
 
     List<OrderDto> returned = orderService.getAllOrderForUser(userId);
 
     assertEquals(2, returned.size());
-    returned.forEach(
-        item -> {
-          assertNotEquals(OrderStatus.CART, item.getStatus());
-        });
     assertTrue(returned.stream().anyMatch(order -> order.getId() == order1Id));
     assertTrue(returned.stream().anyMatch(order -> order.getId() == order2Id));
   }
@@ -139,12 +129,4 @@ class OrderServiceImplTest {
     then(productService).shouldHaveNoInteractions();
   }
 
-  @Test
-  void shouldNot_cancelOrder_when_orderIsCart() {
-    when(orderRepository.findByIdAndUserId(cart.getId(), userId)).thenReturn(Optional.of(cart));
-
-    assertThrows(ConversionException.class, () -> orderService.cancelOrder(userId, cart.getId()));
-
-    then(productService).shouldHaveNoInteractions();
-  }
 }

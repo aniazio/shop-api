@@ -4,10 +4,8 @@ import com.griddynamics.shopapi.dto.ProductDto;
 import com.griddynamics.shopapi.exception.ProductNotAvailableException;
 import com.griddynamics.shopapi.exception.ProductNotFoundException;
 import com.griddynamics.shopapi.exception.WrongOrderException;
-import com.griddynamics.shopapi.model.OrderDetails;
-import com.griddynamics.shopapi.model.OrderItem;
-import com.griddynamics.shopapi.model.Product;
-import com.griddynamics.shopapi.repository.OrderRepository;
+import com.griddynamics.shopapi.model.*;
+import com.griddynamics.shopapi.repository.CartRepository;
 import com.griddynamics.shopapi.repository.ProductRepository;
 import com.griddynamics.shopapi.service.ProductService;
 import jakarta.transaction.Transactional;
@@ -22,7 +20,7 @@ import org.springframework.stereotype.Service;
 public class ProductServiceImpl implements ProductService {
 
   private final ProductRepository productRepository;
-  private final OrderRepository orderRepository;
+  private final CartRepository cartRepository;
 
   @Override
   public List<ProductDto> getAll() {
@@ -49,29 +47,28 @@ public class ProductServiceImpl implements ProductService {
   }
 
   @Override
-  public void validateAndUpdatePricesForOrder(OrderDetails order) {
+  public void validateAndUpdatePricesForCart(Cart cart) {
     boolean wrongPrices = false;
 
-    for (OrderItem item : order.getItems()) {
+    for (CartItem item : cart.getItems()) {
       Product product = getProductById(item.getProductId());
       if (!product.getPrice().equals(item.getPrice())) {
-        order.setTotal(
-            order
-                .getTotal()
+        cart.setTotal(
+            cart.getTotal()
                 .subtract(item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()))));
         item.setPrice(product.getPrice());
-        order.setTotal(
-            order.getTotal().add(item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()))));
+        cart.setTotal(
+            cart.getTotal().add(item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()))));
         wrongPrices = true;
       }
     }
 
     if (wrongPrices) {
-      orderRepository.save(order);
+      cartRepository.save(cart);
       throw new WrongOrderException(
           String.format(
-              "Cart with id %d had wrong prices. Prices were updated, but ordered operation was aborted",
-              order.getId()));
+              "Cart for user with id %d had wrong prices. Prices were updated, but ordered operation was aborted",
+              cart.getUser().getId()));
     }
   }
 
@@ -93,29 +90,27 @@ public class ProductServiceImpl implements ProductService {
   }
 
   @Override
-  public void updateAvailabilityForProductsIn(OrderDetails order) {
+  public void updateAvailabilityForProductsIn(Cart cart) {
     boolean isAvailable = true;
     List<Product> productsFromDb = new ArrayList<>();
 
-    for (OrderItem item : order.getItems()) {
+    for (CartItem item : cart.getItems()) {
       Product product = getProductById(item.getProductId());
       if (product.getAvailable() < item.getQuantity()) {
         isAvailable = false;
-        order.setTotal(
-            order
-                .getTotal()
+        cart.setTotal(
+            cart.getTotal()
                 .subtract(product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()))));
         item.setQuantity(product.getAvailable());
-        order.setTotal(
-            order
-                .getTotal()
+        cart.setTotal(
+            cart.getTotal()
                 .add(product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()))));
       } else {
         productsFromDb.add(product);
       }
     }
     if (!isAvailable) {
-      orderRepository.save(order);
+      cartRepository.save(cart);
       throw new ProductNotAvailableException(
           "Products in a cart are unavailable now. Cart was updated, but ordered operation was aborted");
     }
@@ -123,7 +118,7 @@ public class ProductServiceImpl implements ProductService {
     Set<Product> forSaving = new HashSet<>();
     for (int i = 0; i < productsFromDb.size(); i++) {
       Product product = productsFromDb.get(i);
-      OrderItem item = order.getItems().get(i);
+      CartItem item = cart.getItems().get(i);
 
       assert product.getId() == item.getProductId();
 

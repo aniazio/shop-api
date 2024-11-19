@@ -3,10 +3,7 @@ package com.griddynamics.shopapi.controller;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
-import com.griddynamics.shopapi.dto.CartDto;
-import com.griddynamics.shopapi.dto.OrderDto;
-import com.griddynamics.shopapi.dto.OrderItemDto;
-import com.griddynamics.shopapi.dto.SessionInfo;
+import com.griddynamics.shopapi.dto.*;
 import com.griddynamics.shopapi.service.CartService;
 import com.griddynamics.shopapi.service.SessionService;
 import jakarta.servlet.http.HttpSession;
@@ -47,13 +44,13 @@ public class CartController {
   }
 
   @GetMapping("/items")
-  public CollectionModel<OrderItemDto> getItems(HttpSession session) {
+  public CollectionModel<CartItemDto> getItems(HttpSession session) {
     log.debug("CartController.getItems; Request received for session id {}", session.getId());
     SessionInfo sessionInfo = sessionService.authorizeAndGetSessionInfo(session);
     CartDto cartDto = cartService.getCartFor(sessionInfo);
-    List<OrderItemDto> items = cartDto.getItems();
+    List<CartItemDto> items = cartDto.getItems();
 
-    CollectionModel<OrderItemDto> response = CollectionModel.of(items);
+    CollectionModel<CartItemDto> response = CollectionModel.of(items);
     response.add(linkTo(methodOn(this.getClass()).getCart(session)).withRel("cart"));
     response.add(linkTo(methodOn(this.getClass()).getItems(session)).withSelfRel());
 
@@ -77,13 +74,13 @@ public class CartController {
 
   @PostMapping("/items")
   public ResponseEntity<Void> addItemToCart(
-      @RequestBody @Valid OrderItemDto orderItemDto, HttpSession session) {
+      @RequestBody @Valid CartItemDto cartItemDto, HttpSession session) {
     log.debug(
         "CartController.addItemToCart; Request received for session id {}: body = {}",
         session.getId(),
-        orderItemDto);
+        cartItemDto);
     SessionInfo sessionInfo = sessionService.authorizeAndGetSessionInfo(session);
-    cartService.addItem(orderItemDto, sessionInfo);
+    cartService.addItem(cartItemDto, sessionInfo);
 
     URI location = linkTo(methodOn(this.getClass()).getItems(session)).toUri();
     HttpHeaders responseHeaders = new HttpHeaders();
@@ -95,13 +92,13 @@ public class CartController {
 
   @PatchMapping("/items")
   public ResponseEntity<Void> updateItemAmount(
-      @RequestBody @Valid OrderItemDto orderItemDto, HttpSession session) {
+      @RequestBody @Valid CartItemDto cartItemDto, HttpSession session) {
     log.debug(
         "CartController.updateItemAmount; Request received for session id {}: body = {}",
         session.getId(),
-        orderItemDto);
+        cartItemDto);
     SessionInfo sessionInfo = sessionService.authorizeAndGetSessionInfo(session);
-    cartService.updateItemAmount(orderItemDto, sessionInfo);
+    cartService.updateItemAmount(cartItemDto, sessionInfo);
 
     URI location = linkTo(methodOn(this.getClass()).getItems(session)).toUri();
     HttpHeaders responseHeaders = new HttpHeaders();
@@ -116,7 +113,7 @@ public class CartController {
     log.debug("CartController.checkout; Request received for session id {}", session.getId());
     SessionInfo sessionInfo = sessionService.authorizeAndGetSessionInfo(session);
     OrderDto orderDto = cartService.checkout(sessionInfo);
-    session.setAttribute("cartId", cartService.getIdOfNewCart(sessionInfo));
+    cartService.createNewCart(sessionInfo);
 
     EntityModel<OrderDto> response = EntityModel.of(orderDto);
     response.add(linkTo(methodOn(this.getClass()).getCart(session)).withRel("newCart"));

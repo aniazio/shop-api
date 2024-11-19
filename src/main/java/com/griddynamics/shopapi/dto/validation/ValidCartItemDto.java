@@ -7,10 +7,10 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Constraint(validatedBy = OrderItemDtoValidator.class)
+@Constraint(validatedBy = CartItemDtoValidator.class)
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ValidOrderItemDto {
+public @interface ValidCartItemDto {
 
   String message() default "Id or productId required";
 
