@@ -32,11 +32,8 @@ class CartServiceImplTest {
   @Mock OrderRepository orderRepository;
   @Mock UserRepository userRepository;
   @Mock ProductService productService;
-  SessionServiceImpl sessionService;
   CartServiceImpl cartService;
   @Captor ArgumentCaptor<Cart> captor;
-  SessionInfo sessionInfo;
-  String sessionId = "dsfs-12x-sfd-ads";
   long userId = 2312L;
   long productId = 897L;
   BigDecimal item1Price = BigDecimal.valueOf(10.03);
@@ -47,11 +44,8 @@ class CartServiceImplTest {
 
   @BeforeEach
   void setUp() {
-    sessionService = new SessionServiceImpl(userRepository);
     cartService =
-        new CartServiceImpl(
-            cartRepository, orderRepository, userRepository, productService, sessionService);
-    sessionInfo = new SessionInfo(sessionId, userId);
+        new CartServiceImpl(cartRepository, orderRepository, userRepository, productService);
     cart = new Cart();
     cart.setCreatedAt(LocalDateTime.now());
 
@@ -87,9 +81,8 @@ class CartServiceImplTest {
   @Test
   void should_getCartFor_properRequest() {
     when(cartRepository.findByUserId(userId)).thenReturn(Optional.of(cart));
-    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
-    CartDto returned = cartService.getCartFor(sessionInfo);
+    CartDto returned = cartService.getCartFor(userId);
 
     assertEquals(userId, returned.getUserId());
     assertEquals(cart.getTotal().doubleValue(), returned.getTotal());
@@ -100,9 +93,8 @@ class CartServiceImplTest {
   void should_deleteItemFromCart_properRequest() {
     when(cartRepository.findByUserId(userId)).thenReturn(Optional.of(cart));
     when(cartRepository.save(captor.capture())).thenReturn(null);
-    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
-    cartService.deleteItemFromCart(productId, sessionInfo);
+    cartService.deleteItemFromCart(productId, userId);
 
     Cart captured = captor.getValue();
 
@@ -118,13 +110,12 @@ class CartServiceImplTest {
     itemDto.setProductId(productId);
     itemDto.setQuantity(5);
 
-    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
     when(productService.isAvailableProductWithAmount(productId, itemDto.getQuantity()))
         .thenReturn(true);
     when(cartRepository.findByUserId(userId)).thenReturn(Optional.of(cart));
     when(cartRepository.save(captor.capture())).thenReturn(null);
 
-    cartService.updateItemAmount(itemDto, sessionInfo);
+    cartService.updateItemAmount(itemDto, userId);
 
     Cart captured = captor.getValue();
 
@@ -142,20 +133,18 @@ class CartServiceImplTest {
     itemDto.setProductId(productId);
     itemDto.setQuantity(5);
 
-    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
     when(productService.isAvailableProductWithAmount(productId, itemDto.getQuantity()))
         .thenReturn(false);
 
     assertThrows(
         ProductNotAvailableException.class,
         () -> {
-          cartService.updateItemAmount(itemDto, sessionInfo);
+          cartService.updateItemAmount(itemDto, userId);
         });
   }
 
   @Test
   void should_checkout_when_positiveTotal() {
-    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
     when(cartRepository.findByUserId(userId)).thenReturn(Optional.of(cart));
     ArgumentCaptor<OrderDetails> orderCaptor = ArgumentCaptor.forClass(OrderDetails.class);
     OrderDetails savedOrder = new OrderDetails(cart);
@@ -163,7 +152,7 @@ class CartServiceImplTest {
     savedOrder.setStatus(OrderStatus.ORDERED);
     when(orderRepository.save(orderCaptor.capture())).thenReturn(savedOrder);
 
-    OrderDto returned = cartService.checkout(sessionInfo);
+    OrderDto returned = cartService.checkout(userId);
 
     OrderDetails captured = orderCaptor.getValue();
 
@@ -180,12 +169,11 @@ class CartServiceImplTest {
     cart.setTotal(BigDecimal.ZERO);
     cart.setItems(new ArrayList<>());
     when(cartRepository.findByUserId(userId)).thenReturn(Optional.of(cart));
-    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
     assertThrows(
         ConversionException.class,
         () -> {
-          cartService.checkout(sessionInfo);
+          cartService.checkout(userId);
         });
 
     then(productService).shouldHaveNoInteractions();
@@ -197,7 +185,7 @@ class CartServiceImplTest {
     when(cartRepository.findByUserId(userId)).thenReturn(Optional.empty());
     when(cartRepository.save(captor.capture())).thenReturn(cart);
 
-    cartService.createNewCart(sessionInfo);
+    cartService.createNewCart(userId);
 
     Cart captured = captor.getValue();
 
@@ -214,17 +202,16 @@ class CartServiceImplTest {
     assertThrows(
         ForbiddenResourcesException.class,
         () -> {
-          cartService.createNewCart(sessionInfo);
+          cartService.createNewCart(userId);
         });
   }
 
   @Test
   void should_clearCart_properRequest() {
-    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
     when(cartRepository.findByUserId(userId)).thenReturn(Optional.of(cart));
     when(cartRepository.save(captor.capture())).thenReturn(null);
 
-    cartService.clearCart(sessionInfo);
+    cartService.clearCart(userId);
 
     Cart captured = captor.getValue();
 
@@ -242,14 +229,13 @@ class CartServiceImplTest {
     addedProduct.setPrice(BigDecimal.valueOf(7));
     addedProduct.setId(addedProductId);
 
-    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
     when(productService.isAvailableProductWithAmount(itemDto.getProductId(), itemDto.getQuantity()))
         .thenReturn(true);
     when(cartRepository.findByUserId(userId)).thenReturn(Optional.of(cart));
     when(cartRepository.save(captor.capture())).thenReturn(null);
     when(productService.getProductById(addedProductId)).thenReturn(addedProduct);
 
-    cartService.addItem(itemDto, sessionInfo);
+    cartService.addItem(itemDto, userId);
 
     Cart captured = captor.getValue();
 
@@ -269,7 +255,6 @@ class CartServiceImplTest {
     product.setId(productId);
     product.setPrice(item1Price);
 
-    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
     when(productService.isAvailableProductWithAmount(
             itemDto.getProductId(), itemDto.getQuantity() + firstItemQuantity))
         .thenReturn(true);
@@ -277,7 +262,7 @@ class CartServiceImplTest {
     when(cartRepository.save(captor.capture())).thenReturn(null);
     when(productService.getProductById(productId)).thenReturn(product);
 
-    cartService.addItem(itemDto, sessionInfo);
+    cartService.addItem(itemDto, userId);
 
     Cart captured = captor.getValue();
 

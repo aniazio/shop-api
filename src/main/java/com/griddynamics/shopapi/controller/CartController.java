@@ -30,8 +30,8 @@ public class CartController {
   @GetMapping
   public EntityModel<CartDto> getCart(HttpSession session) {
     log.debug("CartController.getCart; Request received for session id {}", session.getId());
-    SessionInfo sessionInfo = sessionService.authorizeAndGetSessionInfo(session);
-    CartDto cartDto = cartService.getCartFor(sessionInfo);
+    long userId = sessionService.getUserId(session);
+    CartDto cartDto = cartService.getCartFor(userId);
 
     EntityModel<CartDto> response = EntityModel.of(cartDto);
     response.add(linkTo(methodOn(this.getClass()).getItems(session)).withRel("items"));
@@ -46,8 +46,8 @@ public class CartController {
   @GetMapping("/items")
   public CollectionModel<CartItemDto> getItems(HttpSession session) {
     log.debug("CartController.getItems; Request received for session id {}", session.getId());
-    SessionInfo sessionInfo = sessionService.authorizeAndGetSessionInfo(session);
-    CartDto cartDto = cartService.getCartFor(sessionInfo);
+    long userId = sessionService.getUserId(session);
+    CartDto cartDto = cartService.getCartFor(userId);
     List<CartItemDto> items = cartDto.getItems();
 
     CollectionModel<CartItemDto> response = CollectionModel.of(items);
@@ -65,8 +65,8 @@ public class CartController {
         "CartController.deleteItemFromCart; Request received for session id {}: product id = {}",
         session.getId(),
         productId);
-    SessionInfo sessionInfo = sessionService.authorizeAndGetSessionInfo(session);
-    cartService.deleteItemFromCart(productId, sessionInfo);
+    long userId = sessionService.getUserId(session);
+    cartService.deleteItemFromCart(productId, userId);
 
     log.debug(
         "CartController.deleteItemFromCart; Response sent for session id {}", session.getId());
@@ -79,8 +79,8 @@ public class CartController {
         "CartController.addItemToCart; Request received for session id {}: body = {}",
         session.getId(),
         cartItemDto);
-    SessionInfo sessionInfo = sessionService.authorizeAndGetSessionInfo(session);
-    cartService.addItem(cartItemDto, sessionInfo);
+    long userId = sessionService.getUserId(session);
+    cartService.addItem(cartItemDto, userId);
 
     URI location = linkTo(methodOn(this.getClass()).getItems(session)).toUri();
     HttpHeaders responseHeaders = new HttpHeaders();
@@ -97,8 +97,8 @@ public class CartController {
         "CartController.updateItemAmount; Request received for session id {}: body = {}",
         session.getId(),
         cartItemDto);
-    SessionInfo sessionInfo = sessionService.authorizeAndGetSessionInfo(session);
-    cartService.updateItemAmount(cartItemDto, sessionInfo);
+    long userId = sessionService.getUserId(session);
+    cartService.updateItemAmount(cartItemDto, userId);
 
     URI location = linkTo(methodOn(this.getClass()).getItems(session)).toUri();
     HttpHeaders responseHeaders = new HttpHeaders();
@@ -111,9 +111,9 @@ public class CartController {
   @PutMapping("/checkout")
   public EntityModel<OrderDto> checkout(HttpSession session) {
     log.debug("CartController.checkout; Request received for session id {}", session.getId());
-    SessionInfo sessionInfo = sessionService.authorizeAndGetSessionInfo(session);
-    OrderDto orderDto = cartService.checkout(sessionInfo);
-    cartService.createNewCart(sessionInfo);
+    long userId = sessionService.getUserId(session);
+    OrderDto orderDto = cartService.checkout(userId);
+    cartService.createNewCart(userId);
 
     EntityModel<OrderDto> response = EntityModel.of(orderDto);
     response.add(linkTo(methodOn(this.getClass()).getCart(session)).withRel("newCart"));
@@ -128,8 +128,8 @@ public class CartController {
   @DeleteMapping
   public ResponseEntity<Void> clearCart(HttpSession session) {
     log.debug("CartController.clearCart; Request received for session id {}", session.getId());
-    SessionInfo sessionInfo = sessionService.authorizeAndGetSessionInfo(session);
-    cartService.clearCart(sessionInfo);
+    long userId = sessionService.getUserId(session);
+    cartService.clearCart(userId);
 
     URI location = linkTo(methodOn(this.getClass()).getCart(session)).toUri();
     HttpHeaders responseHeaders = new HttpHeaders();

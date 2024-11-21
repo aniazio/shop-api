@@ -23,26 +23,22 @@ public class CartServiceImpl implements CartService {
   private final OrderRepository orderRepository;
   private final UserRepository userRepository;
   private final ProductService productService;
-  private final SessionService sessionService;
 
   @Override
-  public CartDto getCartFor(SessionInfo sessionInfo) {
-    sessionService.validateSessionInfo(sessionInfo);
-    Cart cart = getCartFromDb(sessionInfo.getUserId());
+  public CartDto getCartFor(long userId) {
+    Cart cart = getCartFromDb(userId);
     return new CartDto(cart);
   }
 
   @Override
-  public void deleteItemFromCart(long productId, SessionInfo sessionInfo) {
-    sessionService.validateSessionInfo(sessionInfo);
-    Cart cart = getCartFromDb(sessionInfo.getUserId());
+  public void deleteItemFromCart(long productId, long userId) {
+    Cart cart = getCartFromDb(userId);
     cart.removeProduct(productId);
     cartRepository.save(cart);
   }
 
   @Override
-  public void updateItemAmount(CartItemDto cartItemDto, SessionInfo sessionInfo) {
-    sessionService.validateSessionInfo(sessionInfo);
+  public void updateItemAmount(CartItemDto cartItemDto, long userId) {
     int newAmount = cartItemDto.getQuantity();
     if (!productService.isAvailableProductWithAmount(cartItemDto.getProductId(), newAmount)) {
       throw new ProductNotAvailableException(
@@ -51,7 +47,7 @@ public class CartServiceImpl implements CartService {
               newAmount, cartItemDto.getProductId()));
     }
 
-    Cart cart = getCartFromDb(sessionInfo.getUserId());
+    Cart cart = getCartFromDb(userId);
     cartItemDto = fillCartItemInfo(cartItemDto, cart);
     cart.updateProductAmount(cartItemDto.getProductId(), newAmount);
 
@@ -59,9 +55,8 @@ public class CartServiceImpl implements CartService {
   }
 
   @Override
-  public OrderDto checkout(SessionInfo sessionInfo) {
-    sessionService.validateSessionInfo(sessionInfo);
-    Cart cart = getCartFromDb(sessionInfo.getUserId());
+  public OrderDto checkout(long userId) {
+    Cart cart = getCartFromDb(userId);
     if (cart.getTotal().doubleValue() <= 0) {
       throw new ConversionException("Empty cart cannot be convert to ordered order");
     }
@@ -77,8 +72,8 @@ public class CartServiceImpl implements CartService {
   }
 
   @Override
-  public void createNewCart(SessionInfo sessionInfo) {
-    User user = getClientFromDb(sessionInfo.getUserId());
+  public void createNewCart(long userId) {
+    User user = getClientFromDb(userId);
     Optional<Cart> existingCart = cartRepository.findByUserId(user.getId());
     if (existingCart.isPresent()) {
       throw new ForbiddenResourcesException(
@@ -91,19 +86,17 @@ public class CartServiceImpl implements CartService {
   }
 
   @Override
-  public void clearCart(SessionInfo sessionInfo) {
-    sessionService.validateSessionInfo(sessionInfo);
-    Cart cart = getCartFromDb(sessionInfo.getUserId());
+  public void clearCart(long userId) {
+    Cart cart = getCartFromDb(userId);
     cart.clearOrder();
     cartRepository.save(cart);
   }
 
   @Override
-  public void addItem(CartItemDto cartItemDto, SessionInfo sessionInfo) {
-    sessionService.validateSessionInfo(sessionInfo);
+  public void addItem(CartItemDto cartItemDto, long userId) {
     int amountAdded = cartItemDto.getQuantity();
 
-    Cart cart = getCartFromDb(sessionInfo.getUserId());
+    Cart cart = getCartFromDb(userId);
     cartItemDto = fillCartItemInfo(cartItemDto, cart);
     Optional<CartItem> itemFromCartOp = cart.getItemByProductId(cartItemDto.getProductId());
     int newAmount = amountAdded + itemFromCartOp.map(CartItem::getQuantity).orElse(0);
@@ -140,7 +133,9 @@ public class CartServiceImpl implements CartService {
     CartItemDto returnedOrderItem = new CartItemDto(cartItemDto);
     if (cartItemDto.getProductId() == null) {
 
-      if (cartItemDto.getOrdinal() >= cart.getItems().size()) {
+      if (cartItemDto.getOrdinal() == null
+          || cartItemDto.getOrdinal() >= cart.getItems().size()
+          || cartItemDto.getOrdinal() < 0) {
         throw new ConversionException(
             String.format(
                 "Wrong ordinal of the item. Cart doesn't have order item with ordinal %d",

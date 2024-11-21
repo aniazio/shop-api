@@ -3,7 +3,6 @@ package com.griddynamics.shopapi.service.impl;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
-import com.griddynamics.shopapi.dto.SessionInfo;
 import com.griddynamics.shopapi.exception.ForbiddenResourcesException;
 import com.griddynamics.shopapi.exception.UnauthorizedException;
 import com.griddynamics.shopapi.model.User;
@@ -27,15 +26,7 @@ class SessionServiceImplTest {
   @Test
   void should_authorizeAndGetSessionInfo_when_properSession() {
     when(session.getAttribute("userId")).thenReturn(userId);
-
-    SessionInfo returned = sessionService.authorizeAndGetSessionInfo(session);
-
-    assertEquals(userId, returned.getUserId());
-  }
-
-  @Test
-  void should_getUserId() {
-    when(session.getAttribute("userId")).thenReturn(userId);
+    when(userRepository.findById(userId)).thenReturn(Optional.of(new User()));
 
     long returned = sessionService.getUserId(session);
 
@@ -47,19 +38,11 @@ class SessionServiceImplTest {
     assertThrows(UnauthorizedException.class, () -> sessionService.getUserId(session));
   }
 
-  @Test
-  void should_notThrowException_validateSessionInfo() {
-    SessionInfo sessionInfo = new SessionInfo(userId);
-    when(userRepository.findById(userId)).thenReturn(Optional.of(new User()));
-
-    sessionService.validateSessionInfo(sessionInfo);
-  }
 
   @Test
   void should_throwException_validateSessionInfo() {
-    SessionInfo sessionInfo = new SessionInfo(userId);
+    when(session.getAttribute("userId")).thenReturn(userId);
     when(userRepository.findById(userId)).thenReturn(Optional.empty());
-    assertThrows(
-        ForbiddenResourcesException.class, () -> sessionService.validateSessionInfo(sessionInfo));
+    assertThrows(ForbiddenResourcesException.class, () -> sessionService.getUserId(session));
   }
 }
