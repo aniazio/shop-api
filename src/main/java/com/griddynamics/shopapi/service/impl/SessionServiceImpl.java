@@ -1,6 +1,5 @@
 package com.griddynamics.shopapi.service.impl;
 
-import com.griddynamics.shopapi.dto.SessionInfo;
 import com.griddynamics.shopapi.exception.ForbiddenResourcesException;
 import com.griddynamics.shopapi.exception.UnauthorizedException;
 import com.griddynamics.shopapi.model.User;
@@ -20,29 +19,20 @@ public class SessionServiceImpl implements SessionService {
   private final UserRepository userRepository;
 
   @Override
-  public SessionInfo authorizeAndGetSessionInfo(HttpSession session) {
+  public long getUserId(HttpSession session) {
     Object sessionUserId = session.getAttribute("userId");
     if (sessionUserId == null) {
       throw new UnauthorizedException();
     }
-    return new SessionInfo((long) sessionUserId);
+    long userId = (long) sessionUserId;
+    validateSessionInfo(userId);
+    return userId;
   }
 
-  @Override
-  public Long getUserId(HttpSession session) {
-    Object sessionUserId = session.getAttribute("userId");
-    if (sessionUserId == null) {
-      throw new UnauthorizedException();
-    }
-    return (long) sessionUserId;
-  }
-
-  @Override
-  public void validateSessionInfo(SessionInfo sessionInfo) {
-    Optional<User> user = userRepository.findById(sessionInfo.getUserId());
+  private void validateSessionInfo(long userId) {
+    Optional<User> user = userRepository.findById(userId);
     if (user.isEmpty()) {
-      throw new ForbiddenResourcesException(
-          String.format("User with id %d doesn't exist", sessionInfo.getUserId()));
+      throw new ForbiddenResourcesException(String.format("User with id %d doesn't exist", userId));
     }
   }
 }

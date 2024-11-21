@@ -1,8 +1,7 @@
 package com.griddynamics.shopapi.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -76,16 +75,15 @@ class CartControllerTest {
   }
 
   void verifySessionAttributes() {
-    then(sessionService).should().authorizeAndGetSessionInfo(any());
+    then(sessionService).should().getUserId(any());
     HttpSession captured = sessionCaptor.getValue();
     assertEquals(userId, (long) captured.getAttribute("userId"));
   }
 
   @Test
   void should_return200_when_getCart() throws Exception {
-    when(sessionService.authorizeAndGetSessionInfo(sessionCaptor.capture()))
-        .thenReturn(new SessionInfo(userId));
-    when(cartService.getCartFor(any())).thenReturn(cart);
+    when(sessionService.getUserId(sessionCaptor.capture())).thenReturn(userId);
+    when(cartService.getCartFor(anyLong())).thenReturn(cart);
 
     mockMvc
         .perform(get("/cart").sessionAttrs(sessionAttrs))
@@ -99,9 +97,8 @@ class CartControllerTest {
 
   @Test
   void should_return200_when_getItems() throws Exception {
-    when(sessionService.authorizeAndGetSessionInfo(sessionCaptor.capture()))
-        .thenReturn(new SessionInfo(userId));
-    when(cartService.getCartFor(any())).thenReturn(cart);
+    when(sessionService.getUserId(sessionCaptor.capture())).thenReturn(userId);
+    when(cartService.getCartFor(anyLong())).thenReturn(cart);
 
     mockMvc
         .perform(get("/cart/items").sessionAttrs(sessionAttrs))
@@ -115,22 +112,20 @@ class CartControllerTest {
 
   @Test
   void should_return200_when_deleteItemFromCart() throws Exception {
-    when(sessionService.authorizeAndGetSessionInfo(sessionCaptor.capture()))
-        .thenReturn(new SessionInfo(userId));
+    when(sessionService.getUserId(sessionCaptor.capture())).thenReturn(userId);
     long productId = 33562L;
 
     mockMvc
         .perform(delete("/cart/items/" + (int) productId).sessionAttrs(sessionAttrs))
         .andExpect(status().isOk());
 
-    then(cartService).should().deleteItemFromCart(eq(productId), any(SessionInfo.class));
-    then(sessionService).should().authorizeAndGetSessionInfo(any());
+    then(cartService).should().deleteItemFromCart(productId, userId);
+    then(sessionService).should().getUserId(any());
   }
 
   @Test
   void should_return201_when_addItemToCart_productId() throws Exception {
-    when(sessionService.authorizeAndGetSessionInfo(sessionCaptor.capture()))
-        .thenReturn(new SessionInfo(userId));
+    when(sessionService.getUserId(sessionCaptor.capture())).thenReturn(userId);
     CartItemDto requestDto = new CartItemDto();
     requestDto.setProductId(1034L);
     requestDto.setQuantity(10);
@@ -145,13 +140,12 @@ class CartControllerTest {
         .andExpect(header().exists("Location"));
 
     verifySessionAttributes();
-    then(cartService).should().addItem(any(CartItemDto.class), any(SessionInfo.class));
+    then(cartService).should().addItem(any(CartItemDto.class), eq(userId));
   }
 
   @Test
   void should_return201_when_addItemToCart_id() throws Exception {
-    when(sessionService.authorizeAndGetSessionInfo(sessionCaptor.capture()))
-        .thenReturn(new SessionInfo(userId));
+    when(sessionService.getUserId(sessionCaptor.capture())).thenReturn(userId);
     CartItemDto requestDto = new CartItemDto();
     requestDto.setOrdinal(1);
     requestDto.setQuantity(4);
@@ -166,7 +160,7 @@ class CartControllerTest {
         .andExpect(header().exists("Location"));
 
     verifySessionAttributes();
-    then(cartService).should().addItem(any(CartItemDto.class), any(SessionInfo.class));
+    then(cartService).should().addItem(any(CartItemDto.class), eq(userId));
   }
 
   @Test
@@ -189,8 +183,7 @@ class CartControllerTest {
 
   @Test
   void should_return200_when_updateItemAmount_productId() throws Exception {
-    when(sessionService.authorizeAndGetSessionInfo(sessionCaptor.capture()))
-        .thenReturn(new SessionInfo(userId));
+    when(sessionService.getUserId(sessionCaptor.capture())).thenReturn(userId);
     CartItemDto requestDto = new CartItemDto();
     requestDto.setProductId(114L);
     requestDto.setQuantity(10);
@@ -205,13 +198,12 @@ class CartControllerTest {
         .andExpect(header().exists("Location"));
 
     verifySessionAttributes();
-    then(cartService).should().updateItemAmount(any(CartItemDto.class), any(SessionInfo.class));
+    then(cartService).should().updateItemAmount(any(CartItemDto.class), eq(userId));
   }
 
   @Test
   void should_return200_when_updateItemAmount_id() throws Exception {
-    when(sessionService.authorizeAndGetSessionInfo(sessionCaptor.capture()))
-        .thenReturn(new SessionInfo(userId));
+    when(sessionService.getUserId(sessionCaptor.capture())).thenReturn(userId);
     CartItemDto requestDto = new CartItemDto();
     requestDto.setOrdinal(1);
     requestDto.setQuantity(10);
@@ -226,7 +218,7 @@ class CartControllerTest {
         .andExpect(header().exists("Location"));
 
     verifySessionAttributes();
-    then(cartService).should().updateItemAmount(any(CartItemDto.class), any(SessionInfo.class));
+    then(cartService).should().updateItemAmount(any(CartItemDto.class), eq(userId));
   }
 
   @Test
@@ -249,8 +241,7 @@ class CartControllerTest {
 
   @Test
   void should_return200_when_checkout() throws Exception {
-    when(sessionService.authorizeAndGetSessionInfo(sessionCaptor.capture()))
-        .thenReturn(new SessionInfo(userId));
+    when(sessionService.getUserId(sessionCaptor.capture())).thenReturn(userId);
     OrderDetails returned = new OrderDetails();
     returned.setId(191L);
     returned.setStatus(OrderStatus.ORDERED);
@@ -258,7 +249,7 @@ class CartControllerTest {
     user.setId(userId);
     returned.setUser(user);
 
-    when(cartService.checkout(any())).thenReturn(new OrderDto(returned));
+    when(cartService.checkout(anyLong())).thenReturn(new OrderDto(returned));
 
     mockMvc
         .perform(put("/cart/checkout").sessionAttrs(sessionAttrs))
@@ -267,15 +258,14 @@ class CartControllerTest {
         .andExpect(jsonPath("$.status", Matchers.equalTo(OrderStatus.ORDERED.toString())))
         .andExpect(jsonPath("$.id", Matchers.equalTo(returned.getId().intValue())));
 
-    then(sessionService).should().authorizeAndGetSessionInfo(any());
+    then(sessionService).should().getUserId(any());
     HttpSession captured = sessionCaptor.getValue();
     assertEquals(userId, (long) captured.getAttribute("userId"));
   }
 
   @Test
   void should_return200_when_clearCart() throws Exception {
-    when(sessionService.authorizeAndGetSessionInfo(sessionCaptor.capture()))
-        .thenReturn(new SessionInfo(userId));
+    when(sessionService.getUserId(sessionCaptor.capture())).thenReturn(userId);
 
     mockMvc
         .perform(delete("/cart").sessionAttrs(sessionAttrs))
@@ -283,14 +273,13 @@ class CartControllerTest {
         .andExpect(header().exists("location"));
 
     verifySessionAttributes();
-    then(cartService).should().clearCart(any(SessionInfo.class));
+    then(cartService).should().clearCart(userId);
   }
 
   @Test
   void should_return404_when_resourceNotFound() throws Exception {
-    when(sessionService.authorizeAndGetSessionInfo(sessionCaptor.capture()))
-        .thenReturn(new SessionInfo(userId));
-    when(cartService.getCartFor(any())).thenThrow(UserNotFoundException.class);
+    when(sessionService.getUserId(sessionCaptor.capture())).thenReturn(userId);
+    when(cartService.getCartFor(anyLong())).thenThrow(UserNotFoundException.class);
 
     mockMvc
         .perform(get("/cart").sessionAttrs(sessionAttrs))
@@ -302,9 +291,8 @@ class CartControllerTest {
 
   @Test
   void should_return404_when_cartNotFound() throws Exception {
-    when(sessionService.authorizeAndGetSessionInfo(sessionCaptor.capture()))
-        .thenReturn(new SessionInfo(userId));
-    when(cartService.getCartFor(any())).thenThrow(CartNotFoundException.class);
+    when(sessionService.getUserId(sessionCaptor.capture())).thenReturn(userId);
+    when(cartService.getCartFor(anyLong())).thenThrow(CartNotFoundException.class);
 
     mockMvc
         .perform(get("/cart").sessionAttrs(sessionAttrs))
@@ -317,9 +305,8 @@ class CartControllerTest {
 
   @Test
   void should_return403_when_forbidden() throws Exception {
-    when(sessionService.authorizeAndGetSessionInfo(sessionCaptor.capture()))
-        .thenReturn(new SessionInfo(userId));
-    when(cartService.getCartFor(any())).thenThrow(ForbiddenResourcesException.class);
+    when(sessionService.getUserId(sessionCaptor.capture())).thenReturn(userId);
+    when(cartService.getCartFor(anyLong())).thenThrow(ForbiddenResourcesException.class);
 
     mockMvc
         .perform(get("/cart").sessionAttrs(sessionAttrs))
