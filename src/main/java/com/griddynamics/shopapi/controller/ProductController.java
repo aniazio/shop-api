@@ -23,12 +23,10 @@ public class ProductController {
 
   @GetMapping
   public CollectionModel<ProductDto> getAll() {
-    log.debug("ProductController.getAll; Request received");
     List<ProductDto> productDtos = productService.getAll();
 
     CollectionModel<ProductDto> response = CollectionModel.of(productDtos);
     response.add(linkTo(methodOn(this.getClass()).getAll()).withSelfRel());
-    log.debug("ProductController.getAll; Response sent: {}", productDtos);
     return response;
   }
 }
