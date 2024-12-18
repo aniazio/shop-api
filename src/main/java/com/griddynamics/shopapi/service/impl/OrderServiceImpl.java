@@ -13,26 +13,21 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
 
   private final OrderRepository orderRepository;
   private final ProductService productService;
-
-  public OrderServiceImpl(OrderRepository orderRepository, ProductService productService) {
-    this.orderRepository = orderRepository;
-    this.productService = productService;
-  }
-
   @Override
   public List<OrderDto> getAllOrderForUser(long userId) {
     Set<OrderDetails> orders = orderRepository.findByUserId(userId);
     List<OrderDto> ordersDto = new ArrayList<>();
     orders.stream()
-        .filter(order -> order.getStatus() != OrderStatus.CART)
         .forEach(order -> ordersDto.add(new OrderDto(order)));
     return ordersDto;
   }

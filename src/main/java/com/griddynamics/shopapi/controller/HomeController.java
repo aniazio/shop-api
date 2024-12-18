@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class HomeController {
 
-  @GetMapping("/")
+  @GetMapping
   public Links getHome(HttpSession session) {
     Links response =
         Links.of(linkTo(methodOn(ProductController.class).getAll()).withRel("products"))

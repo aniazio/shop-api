@@ -8,10 +8,8 @@ import com.griddynamics.shopapi.dto.ProductDto;
 import com.griddynamics.shopapi.exception.ProductNotAvailableException;
 import com.griddynamics.shopapi.exception.ProductNotFoundException;
 import com.griddynamics.shopapi.exception.WrongOrderException;
-import com.griddynamics.shopapi.model.OrderDetails;
-import com.griddynamics.shopapi.model.OrderItem;
-import com.griddynamics.shopapi.model.Product;
-import com.griddynamics.shopapi.repository.OrderRepository;
+import com.griddynamics.shopapi.model.*;
+import com.griddynamics.shopapi.repository.CartRepository;
 import com.griddynamics.shopapi.repository.ProductRepository;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -30,14 +28,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class ProductServiceImplTest {
 
   @Mock ProductRepository productRepository;
-  @Mock OrderRepository orderRepository;
+  @Mock CartRepository cartRepository;
   @InjectMocks ProductServiceImpl productService;
   Product product1, product2, product3;
   List<Product> products;
   int available1, available3;
   int quantity1, quantity3;
-  List<OrderItem> items;
-  OrderItem item1, item3;
+  List<CartItem> items;
+  CartItem item1, item3;
 
   @BeforeEach
   void setUp() {
@@ -66,12 +64,12 @@ class ProductServiceImplTest {
     products.add(product2);
     products.add(product3);
 
-    item1 = new OrderItem();
+    item1 = new CartItem();
     item1.setProduct(product1);
     quantity1 = 3;
     item1.setQuantity(quantity1);
 
-    item3 = new OrderItem();
+    item3 = new CartItem();
     item3.setProduct(product3);
     quantity3 = 2;
     item3.setQuantity(quantity3);
@@ -102,7 +100,7 @@ class ProductServiceImplTest {
     when(productRepository.findById(product1.getId())).thenReturn(Optional.of(product1));
     when(productRepository.findById(product3.getId())).thenReturn(Optional.of(product3));
 
-    productService.addItemsToAvailable(items);
+    productService.addItemsToAvailable(items.stream().map(OrderItem::new).toList());
 
     Set<Product> captured = captor.getValue();
 
@@ -115,9 +113,12 @@ class ProductServiceImplTest {
 
   @Test
   void should_validateAndUpdatePricesForOrder_properRequest() {
-    OrderDetails order = new OrderDetails();
-    order.setItems(items);
-    order.setTotal(
+    Cart cart = new Cart();
+    User user = new User();
+    user.setId(4324L);
+    cart.setUser(user);
+    cart.setItems(items);
+    cart.setTotal(
         product1
             .getPrice()
             .multiply(BigDecimal.valueOf(quantity1))
@@ -137,13 +138,13 @@ class ProductServiceImplTest {
 
     when(productRepository.findById(product1.getId())).thenReturn(Optional.of(product1));
     when(productRepository.findById(product3.getId())).thenReturn(Optional.of(product3));
-    ArgumentCaptor<OrderDetails> captor = ArgumentCaptor.forClass(OrderDetails.class);
-    when(orderRepository.save(captor.capture())).thenReturn(null);
+    ArgumentCaptor<Cart> captor = ArgumentCaptor.forClass(Cart.class);
+    when(cartRepository.save(captor.capture())).thenReturn(null);
 
     assertThrows(
-        WrongOrderException.class, () -> productService.validateAndUpdatePricesForOrder(order));
+        WrongOrderException.class, () -> productService.validateAndUpdatePricesForCart(cart));
 
-    OrderDetails captured = captor.getValue();
+    Cart captured = captor.getValue();
 
     assertEquals(newTotal, captured.getTotal().doubleValue());
     assertEquals(2, captured.getItems().size());
@@ -192,9 +193,9 @@ class ProductServiceImplTest {
 
   @Test
   void should_updateAvailabilityForProductsIn_when_available() {
-    OrderDetails order = new OrderDetails();
-    order.setItems(items);
-    order.setTotal(
+    Cart cart = new Cart();
+    cart.setItems(items);
+    cart.setTotal(
         product1
             .getPrice()
             .multiply(BigDecimal.valueOf(quantity1))
@@ -205,7 +206,7 @@ class ProductServiceImplTest {
     ArgumentCaptor<Set<Product>> captor = ArgumentCaptor.forClass(Set.class);
     when(productRepository.saveAll(captor.capture())).thenReturn(null);
 
-    productService.updateAvailabilityForProductsIn(order);
+    productService.updateAvailabilityForProductsIn(cart);
 
     Set<Product> captured = captor.getValue();
 
@@ -221,15 +222,15 @@ class ProductServiceImplTest {
                 product ->
                     product.getId().equals(product3.getId())
                         && product.getAvailable() == available3 - quantity3));
-    then(orderRepository).shouldHaveNoInteractions();
+    then(cartRepository).shouldHaveNoInteractions();
   }
 
   @Test
   void should_updateAvailabilityForProductsIn_when_notAvailable() {
-    OrderDetails order = new OrderDetails();
+    Cart cart = new Cart();
     item1.setQuantity(product1.getAvailable() + 3);
-    order.setItems(items);
-    order.setTotal(
+    cart.setItems(items);
+    cart.setTotal(
         product1
             .getPrice()
             .multiply(BigDecimal.valueOf(available1 + 3))
@@ -244,14 +245,14 @@ class ProductServiceImplTest {
 
     when(productRepository.findById(product1.getId())).thenReturn(Optional.of(product1));
     when(productRepository.findById(product3.getId())).thenReturn(Optional.of(product3));
-    ArgumentCaptor<OrderDetails> captor = ArgumentCaptor.forClass(OrderDetails.class);
-    when(orderRepository.save(captor.capture())).thenReturn(null);
+    ArgumentCaptor<Cart> captor = ArgumentCaptor.forClass(Cart.class);
+    when(cartRepository.save(captor.capture())).thenReturn(null);
 
     assertThrows(
         ProductNotAvailableException.class,
-        () -> productService.updateAvailabilityForProductsIn(order));
+        () -> productService.updateAvailabilityForProductsIn(cart));
 
-    OrderDetails captured = captor.getValue();
+    Cart captured = captor.getValue();
 
     then(productRepository).shouldHaveNoMoreInteractions();
     assertEquals(newTotal, captured.getTotal().doubleValue());

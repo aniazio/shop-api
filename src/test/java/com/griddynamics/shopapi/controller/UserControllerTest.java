@@ -13,8 +13,7 @@ import com.griddynamics.shopapi.dto.CartDto;
 import com.griddynamics.shopapi.dto.UserDto;
 import com.griddynamics.shopapi.exception.UserAlreadyExistsException;
 import com.griddynamics.shopapi.exception.WrongCredentialsException;
-import com.griddynamics.shopapi.model.OrderDetails;
-import com.griddynamics.shopapi.model.OrderStatus;
+import com.griddynamics.shopapi.model.Cart;
 import com.griddynamics.shopapi.model.User;
 import com.griddynamics.shopapi.service.UserService;
 import org.hamcrest.Matchers;
@@ -50,14 +49,12 @@ class UserControllerTest {
 
   @Test
   void should_return200_when_loginUser() throws Exception {
-    OrderDetails orderDetails = new OrderDetails();
-    orderDetails.setStatus(OrderStatus.CART);
-    orderDetails.setId(324L);
+    Cart cart = new Cart();
     User user = new User();
     user.setId(35L);
-    orderDetails.setUser(user);
+    cart.setUser(user);
 
-    CartDto cartDto = new CartDto(orderDetails);
+    CartDto cartDto = new CartDto(cart);
     when(userService.loginAndReturnCart(any(UserDto.class))).thenReturn(cartDto);
 
     mockMvc
@@ -67,7 +64,6 @@ class UserControllerTest {
                 .contentType(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.userId", Matchers.equalTo(user.getId().intValue())))
-        .andExpect(jsonPath("$.cartId", Matchers.equalTo(orderDetails.getId().intValue())))
         .andExpect(jsonPath("$.sessionId").exists());
   }
 
